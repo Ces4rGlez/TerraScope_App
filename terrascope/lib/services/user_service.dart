@@ -14,4 +14,16 @@ class ApiService {
       throw Exception('Error al cargar usuarios');
     }
   }
+
+  static Future<List<dynamic>> getFaunaFlora() async{
+    final responde =await http.get(Uri.parse('$baseUrl/fauna-flora'));
+
+        if (responde.statusCode == 200) {
+      return json.decode(responde.body);
+    } else {
+      throw Exception('Error al cargar usuarios');
+    }
+  }
+
+
 }
