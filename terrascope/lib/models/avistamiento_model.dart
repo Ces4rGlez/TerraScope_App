@@ -1,0 +1,130 @@
+class Avistamiento {
+  final String id;
+  final String nombreComun;
+  final String nombreCientifico;
+  final String especie;
+  final String descripcion;
+  final String imagen;
+  final Ubicacion ubicacion;
+  final String comportamiento;
+  final String estadoExtincion;
+  final String estadoEspecimen;
+  final Habitad habitad;
+  final List<Comentario> comentarios;
+
+  Avistamiento({
+    required this.id,
+    required this.nombreComun,
+    required this.nombreCientifico,
+    required this.especie,
+    required this.descripcion,
+    required this.imagen,
+    required this.ubicacion,
+    required this.comportamiento,
+    required this.estadoExtincion,
+    required this.estadoEspecimen,
+    required this.habitad,
+    required this.comentarios,
+  });
+
+  factory Avistamiento.fromJson(Map<String, dynamic> json) {
+    return Avistamiento(
+      id: json['_id'] ?? '',
+      nombreComun: json['nombre_comun'] ?? '',
+      nombreCientifico: json['nombre_cientifico'] ?? '',
+      especie: json['especie'] ?? '',
+      descripcion: json['descripcion'] ?? '',
+      imagen: json['imagen'] ?? '',
+      ubicacion: Ubicacion.fromJson(json['ubicacion'] ?? {}),
+      comportamiento: json['comportamiento'] ?? '',
+      estadoExtincion: json['estado_extincion'] ?? '',
+      estadoEspecimen: json['estado_especimen'] ?? '',
+      habitad: Habitad.fromJson(json['habitad'] ?? {}),
+      comentarios:
+          (json['comentarios'] as List?)
+              ?.map((c) => Comentario.fromJson(c))
+              .toList() ??
+          [],
+    );
+  }
+}
+
+class Ubicacion {
+  final double latitud;
+  final double longitud;
+
+  Ubicacion({required this.latitud, required this.longitud});
+
+  factory Ubicacion.fromJson(Map<String, dynamic> json) {
+    return Ubicacion(
+      latitud: (json['latitud'] ?? 0).toDouble(),
+      longitud: (json['longitud'] ?? 0).toDouble(),
+    );
+  }
+}
+
+class Habitad {
+  final String idHabitad;
+  final String nombreHabitad;
+  final String descripcionHabitat;
+
+  Habitad({
+    required this.idHabitad,
+    required this.nombreHabitad,
+    required this.descripcionHabitat,
+  });
+
+  factory Habitad.fromJson(Map<String, dynamic> json) {
+    return Habitad(
+      idHabitad: json['id_habitad'] ?? '',
+      nombreHabitad: json['nombre_habitad'] ?? '',
+      descripcionHabitat: json['descripcion_habitat'] ?? '',
+    );
+  }
+}
+
+class Comentario {
+  final String idUsuario;
+  final String nombreUsuario;
+  final String comentario;
+  final DateTime fecha;
+
+  Comentario({
+    required this.idUsuario,
+    required this.nombreUsuario,
+    required this.comentario,
+    required this.fecha,
+  });
+
+  factory Comentario.fromJson(Map<String, dynamic> json) {
+    return Comentario(
+      idUsuario: json['id_usuario'] ?? '',
+      nombreUsuario: json['nombre_usuario'] ?? '',
+      comentario: json['comentario'] ?? '',
+      fecha: DateTime.parse(json['fecha'] ?? DateTime.now().toIso8601String()),
+    );
+  }
+}
+
+class ZonaFrecuente {
+  final double lat;
+  final double lng;
+  final String especie;
+  final int count;
+
+  ZonaFrecuente({
+    required this.lat,
+    required this.lng,
+    required this.especie,
+    required this.count,
+  });
+
+  factory ZonaFrecuente.fromJson(Map<String, dynamic> json) {
+    return ZonaFrecuente(
+      lat: (json['lat'] ?? 0).toDouble(),
+      lng: (json['lng'] ?? 0).toDouble(),
+      especie: json['especie'] ?? '',
+      count: json['count'] ?? 0,
+    );
+  }
+}
