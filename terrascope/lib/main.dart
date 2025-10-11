@@ -17,12 +17,26 @@ class MyApp extends StatelessWidget {
       title: 'TerraScope',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
+        useMaterial3: true,
       ),
       initialRoute: '/login',
       routes: {
         '/login': (context) => const LoginPage(),
         '/register': (context) => const RegisterPage(),
         '/map': (context) => const MapPage(),
+      },
+      //Aquí se usa onGenerateRoute para pasar los datos dinámicos
+      onGenerateRoute: (settings) {
+        if (settings.name == '/home') {
+          final args = settings.arguments as Map<String, dynamic>;
+          return MaterialPageRoute(
+            builder: (context) => HomePage(
+              nombreUsuario: args['nombre_usuario'] ?? 'Desconocido',
+              emailUsuario: args['email_usuario'] ?? 'sin_correo@example.com',
+            ),
+          );
+        }
+        return null;
       },
     );
   }
