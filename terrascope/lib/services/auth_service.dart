@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class AuthService {
-  final String baseUrl = 'http://localhost:3000/api/usuarios';
+  final String baseUrl = ' "http://10.0.2.2:3000/api/usuarios';
 
   /// Retorna un Map con los datos del usuario si el login es correcto, o null si falla
   Future<Map<String, dynamic>?> login(String email, String password) async {

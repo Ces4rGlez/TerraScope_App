@@ -29,76 +29,106 @@ class FaunaFloraService {
     }
   }
 
-  // Obtener todos los avistamientos
-  Future<List<FaunaFloraData>> getAllFaunaFlora() async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/fauna-flora'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      );
+ // En fauna_flora_service.dart, actualiza el método getAllFaunaFlora:
 
-      if (response.statusCode == 200) {
-        final responseData = json.decode(response.body);
-        List<dynamic> dataList = responseData['data'];
-        return dataList.map((json) => FaunaFloraData.fromJson(json)).toList();
+
+Future<List<FaunaFloraData>> getAllFaunaFlora() async {
+  try {
+    final response = await http.get(
+      Uri.parse('$baseUrl/fauna-flora'),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final responseData = json.decode(response.body);
+      
+      // CAMBIO AQUÍ: Verificar si es un array directo o tiene propiedad 'data'
+      List<dynamic> dataList;
+      
+      if (responseData is List) {
+        // Si es un array directo
+        dataList = responseData;
+      } else if (responseData is Map && responseData.containsKey('data')) {
+        // Si tiene propiedad 'data'
+        dataList = responseData['data'];
       } else {
-        throw Exception('Error al obtener avistamientos: ${response.statusCode}');
+        throw Exception('Formato de respuesta no reconocido');
       }
-    } catch (e) {
-      rethrow;
+      
+      return dataList.map((json) => FaunaFloraData.fromJson(json)).toList();
+    } else {
+      throw Exception('Error al obtener avistamientos: ${response.statusCode}');
     }
+  } catch (e) {
+    print('❌ Error en getAllFaunaFlora: $e');
+    rethrow;
   }
-
+}
   // Obtener avistamiento por ID
   Future<FaunaFloraData?> getFaunaFloraById(String id) async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/fauna-flora/$id'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      );
+  try {
+    final response = await http.get(
+      Uri.parse('$baseUrl/fauna-flora/$id'),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    );
 
-      if (response.statusCode == 200) {
-        final responseData = json.decode(response.body);
-        return FaunaFloraData.fromJson(responseData['data']);
-      } else if (response.statusCode == 404) {
-        return null;
-      } else {
-        throw Exception('Error al obtener avistamiento: ${response.statusCode}');
-      }
-    } catch (e) {
-      rethrow;
+    if (response.statusCode == 200) {
+      final responseData = json.decode(response.body);
+      
+      // Si viene directo o con 'data'
+      final data = responseData is Map && responseData.containsKey('data')
+          ? responseData['data']
+          : responseData;
+          
+      return FaunaFloraData.fromJson(data);
+    } else if (response.statusCode == 404) {
+      return null;
+    } else {
+      throw Exception('Error al obtener avistamiento: ${response.statusCode}');
     }
+  } catch (e) {
+    rethrow;
   }
+}
 
   // Obtener avistamientos cercanos
-  Future<List<FaunaFloraData>> getFaunaFloraCerca(
-    double latitud,
-    double longitud,
-    double distanciaKm,
-  ) async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/fauna-flora/cerca/$latitud/$longitud/$distanciaKm'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      );
+ Future<List<FaunaFloraData>> getFaunaFloraCerca(
+  double latitud,
+  double longitud,
+  double distanciaKm,
+) async {
+  try {
+    final response = await http.get(
+      Uri.parse('$baseUrl/fauna-flora/cerca/$latitud/$longitud/$distanciaKm'),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    );
 
-      if (response.statusCode == 200) {
-        final responseData = json.decode(response.body);
-        List<dynamic> dataList = responseData['data'];
-        return dataList.map((json) => FaunaFloraData.fromJson(json)).toList();
+    if (response.statusCode == 200) {
+      final responseData = json.decode(response.body);
+      
+      List<dynamic> dataList;
+      if (responseData is List) {
+        dataList = responseData;
+      } else if (responseData is Map && responseData.containsKey('data')) {
+        dataList = responseData['data'];
       } else {
-        throw Exception('Error al buscar avistamientos cercanos: ${response.statusCode}');
+        throw Exception('Formato de respuesta no reconocido');
       }
-    } catch (e) {
-      rethrow;
+      
+      return dataList.map((json) => FaunaFloraData.fromJson(json)).toList();
+    } else {
+      throw Exception('Error al buscar avistamientos cercanos: ${response.statusCode}');
     }
+  } catch (e) {
+    rethrow;
   }
+}
 
   // Agregar comentario
   Future<bool> addComentario(
