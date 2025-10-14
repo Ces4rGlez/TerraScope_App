@@ -2,7 +2,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  static const String baseUrl = "http://localhost:3000/api"; // Cambia a tu IP si pruebas en móvil
+  static const String baseUrl =
+      "http://10.0.2.2:3000/api"; // Cambia a tu IP si pruebas en móvil
 
   // obtener todos los usuarios
   static Future<List<dynamic>> getUsuarios() async {
@@ -15,15 +16,13 @@ class ApiService {
     }
   }
 
-  static Future<List<dynamic>> getFaunaFlora() async{
-    final responde =await http.get(Uri.parse('$baseUrl/fauna-flora'));
+  static Future<List<dynamic>> getFaunaFlora() async {
+    final responde = await http.get(Uri.parse('$baseUrl/fauna-flora'));
 
-        if (responde.statusCode == 200) {
+    if (responde.statusCode == 200) {
       return json.decode(responde.body);
     } else {
       throw Exception('Error al cargar usuarios');
     }
   }
-
-
 }

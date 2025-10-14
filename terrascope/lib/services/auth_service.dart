@@ -2,9 +2,9 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class AuthService {
-  final String baseUrl = 'http://localhost:3000/api/usuarios';
+  final String baseUrl = 'http://10.0.2.2:3000/api/usuarios';
 
-  /// Retorna un Map con los datos del usuario si el login es correcto, o null si falla
+  /// Retorna un Map con los datos completos del usuario incluyendo el ID
   Future<Map<String, dynamic>?> login(String email, String password) async {
     try {
       final response = await http.get(Uri.parse(baseUrl));
@@ -12,17 +12,17 @@ class AuthService {
       if (response.statusCode == 200) {
         final List<dynamic> usuarios = json.decode(response.body);
 
-        
         final usuario = usuarios.firstWhere(
           (u) =>
               u['email_usuario'] == email &&
-              u['contrasenia_usuario'] == password, 
+              u['contrasenia_usuario'] == password,
           orElse: () => null,
         );
 
         if (usuario != null) {
-          // Devuelve solo los campos que necesitamos
+          // ✅ CAMBIO: Ahora incluye el _id del usuario
           return {
+            'id_usuario': usuario['_id'], // ✅ NUEVO
             'nombre_usuario': usuario['nombre_usuario'],
             'email_usuario': usuario['email_usuario'],
           };

@@ -1,19 +1,23 @@
 import 'package:flutter/material.dart';
+import '../map/map_page.dart';
 
 class HomePage extends StatelessWidget {
+  final String? idUsuario;
   final String nombreUsuario;
   final String emailUsuario;
 
   const HomePage({
     super.key,
+    this.idUsuario,
     required this.nombreUsuario,
     required this.emailUsuario,
   });
 
   @override
   Widget build(BuildContext context) {
-    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-
+    final args =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final id = args?['id_usuario'] ?? idUsuario;
     final nombre = args?['nombre_usuario'] ?? nombreUsuario;
     final email = args?['email_usuario'] ?? emailUsuario;
 
@@ -23,10 +27,7 @@ class HomePage extends StatelessWidget {
         backgroundColor: const Color(0xFF224275),
         title: const Text(
           "Inicio",
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
         centerTitle: true,
       ),
@@ -54,10 +55,7 @@ class HomePage extends StatelessWidget {
               const SizedBox(height: 10),
               Text(
                 email,
-                style: const TextStyle(
-                  fontSize: 16,
-                  color: Color(0xFF0F1D33),
-                ),
+                style: const TextStyle(fontSize: 16, color: Color(0xFF0F1D33)),
               ),
               const SizedBox(height: 40),
               Container(
@@ -80,13 +78,20 @@ class HomePage extends StatelessWidget {
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF224275),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
                 onPressed: () {
-                  // Navegar a fauna/flora o dashboard
+                  Navigator.pushNamed(
+                    context,
+                    '/map',
+                    arguments: {'id_usuario': id, 'nombre_usuario': nombre},
+                  );
                 },
                 icon: const Icon(Icons.pets, color: Colors.white),
                 label: const Text(

@@ -1,3 +1,5 @@
+import '../components/models/comentario.dart';
+
 class Avistamiento {
   final String id;
   final String nombreComun;
@@ -79,29 +81,6 @@ class Habitad {
       idHabitad: json['id_habitad'] ?? '',
       nombreHabitad: json['nombre_habitad'] ?? '',
       descripcionHabitat: json['descripcion_habitat'] ?? '',
-    );
-  }
-}
-
-class Comentario {
-  final String idUsuario;
-  final String nombreUsuario;
-  final String comentario;
-  final DateTime fecha;
-
-  Comentario({
-    required this.idUsuario,
-    required this.nombreUsuario,
-    required this.comentario,
-    required this.fecha,
-  });
-
-  factory Comentario.fromJson(Map<String, dynamic> json) {
-    return Comentario(
-      idUsuario: json['id_usuario'] ?? '',
-      nombreUsuario: json['nombre_usuario'] ?? '',
-      comentario: json['comentario'] ?? '',
-      fecha: DateTime.parse(json['fecha'] ?? DateTime.now().toIso8601String()),
     );
   }
 }

@@ -24,19 +24,29 @@ class MyApp extends StatelessWidget {
       routes: {
         '/login': (context) => const LoginPage(),
         '/register': (context) => const RegisterPage(),
-        '/map': (context) => const MapPage(),
       },
-      //Aquí se usa onGenerateRoute para pasar los datos dinámicos
       onGenerateRoute: (settings) {
         if (settings.name == '/home') {
           final args = settings.arguments as Map<String, dynamic>;
           return MaterialPageRoute(
             builder: (context) => HomePage(
+              idUsuario: args['id_usuario'],
               nombreUsuario: args['nombre_usuario'] ?? 'Desconocido',
               emailUsuario: args['email_usuario'] ?? 'sin_correo@example.com',
             ),
           );
         }
+
+        if (settings.name == '/map') {
+          final args = settings.arguments as Map<String, dynamic>?;
+          return MaterialPageRoute(
+            builder: (context) => MapPage(
+              usuarioId: args?['id_usuario'],
+              nombreUsuario: args?['nombre_usuario'],
+            ),
+          );
+        }
+
         return null;
       },
     );
