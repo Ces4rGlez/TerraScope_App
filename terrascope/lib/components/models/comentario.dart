@@ -12,11 +12,11 @@ class Comentario {
   });
 
   Map<String, dynamic> toJson() => {
-        'id_usuario': idUsuario,
-        'nombre_usuario': nombreUsuario,
-        'comentario': comentario,
-        'fecha': fecha.toIso8601String(),
-      };
+    'id_usuario': idUsuario,
+    'nombre_usuario': nombreUsuario,
+    'comentario': comentario,
+    'fecha': fecha.toIso8601String(),
+  };
 
   factory Comentario.fromJson(Map<String, dynamic> json) {
     return Comentario(

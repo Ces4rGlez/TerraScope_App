@@ -44,4 +44,41 @@ class AvistamientoService {
       throw Exception('Error al cargar zonas frecuentes');
     }
   }
+
+  static Future<void> addComentario(
+    String avistamientoId,
+    String usuarioId,
+    String nombreUsuario,
+    String comentario,
+  ) async {
+    final response = await http.post(
+      Uri.parse('${ApiConfig.baseUrl}/fauna-flora/$avistamientoId/comentarios'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({
+        if (usuarioId.isNotEmpty && usuarioId != '000000000000000000000000')
+          'id_usuario': usuarioId,
+        'nombre_usuario': nombreUsuario,
+        'comentario': comentario,
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Error al agregar comentario: ${response.body}');
+    }
+  }
+
+  // ✅ NUEVO: Búsqueda de avistamientos
+  static Future<List<Avistamiento>> searchAvistamientos(String query) async {
+    final avistamientos = await getAvistamientos();
+
+    return avistamientos.where((avistamiento) {
+      return avistamiento.nombreComun.toLowerCase().contains(
+            query.toLowerCase(),
+          ) ||
+          avistamiento.nombreCientifico.toLowerCase().contains(
+            query.toLowerCase(),
+          ) ||
+          avistamiento.especie.toLowerCase().contains(query.toLowerCase());
+    }).toList();
+  }
 }

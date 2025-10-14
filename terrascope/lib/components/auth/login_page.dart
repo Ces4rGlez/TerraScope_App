@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:terrascope/services/auth_service.dart'; 
+import 'package:terrascope/services/auth_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -27,24 +27,23 @@ class _LoginPageState extends State<LoginPage> {
     setState(() => isLoading = true);
 
     final user = await AuthService().login(email, password);
+    setState(() => isLoading = false);
 
-setState(() => isLoading = false);
-
-if (user != null) {
-  Navigator.pushReplacementNamed(
-    context,
-    '/home',
-    arguments: {
-      'nombre_usuario': user['nombre_usuario'],
-      'email_usuario': user['email_usuario'],
-    },
-  );
-} else {
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(content: Text("Correo o contraseña incorrectos ❌")),
-  );
-}
-
+    if (user != null) {
+      Navigator.pushReplacementNamed(
+        context,
+        '/home',
+        arguments: {
+          'id_usuario': user['id_usuario'],
+          'nombre_usuario': user['nombre_usuario'],
+          'email_usuario': user['email_usuario'],
+        },
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Correo o contraseña incorrectos ❌")),
+      );
+    }
   }
 
   @override
@@ -118,7 +117,10 @@ if (user != null) {
                             filled: true,
                             fillColor: Colors.white,
                             labelText: "Correo electrónico",
-                            prefixIcon: const Icon(Icons.email_outlined, color: Color(0xFF5C6445)),
+                            prefixIcon: const Icon(
+                              Icons.email_outlined,
+                              color: Color(0xFF5C6445),
+                            ),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -134,7 +136,10 @@ if (user != null) {
                             filled: true,
                             fillColor: Colors.white,
                             labelText: "Contraseña",
-                            prefixIcon: const Icon(Icons.lock_outline, color: Color(0xFF5C6445)),
+                            prefixIcon: const Icon(
+                              Icons.lock_outline,
+                              color: Color(0xFF5C6445),
+                            ),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -156,7 +161,9 @@ if (user != null) {
                               ),
                             ),
                             child: isLoading
-                                ? const CircularProgressIndicator(color: Colors.white)
+                                ? const CircularProgressIndicator(
+                                    color: Colors.white,
+                                  )
                                 : const Text(
                                     "Continuar",
                                     style: TextStyle(
@@ -171,7 +178,8 @@ if (user != null) {
 
                         Center(
                           child: TextButton(
-                            onPressed: () => Navigator.pushNamed(context, '/register'),
+                            onPressed: () =>
+                                Navigator.pushNamed(context, '/register'),
                             child: const Text(
                               "¿No tienes cuenta? Regístrate",
                               style: TextStyle(color: Color(0xFF224275)),
