@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import '../../models/avistamiento_model.dart';
+import '../models/avistamiento_model.dart';
 
 class AvistamientoDetailCard extends StatelessWidget {
   final Avistamiento avistamiento;
@@ -78,7 +78,7 @@ class AvistamientoDetailCard extends StatelessWidget {
                           Row(
                             children: [
                               Icon(
-                                avistamiento.especie.toLowerCase() == 'flora'
+                                avistamiento.tipo.toLowerCase() == 'Flora'
                                     ? Icons.local_florist
                                     : Icons.pets,
                                 size: 16,

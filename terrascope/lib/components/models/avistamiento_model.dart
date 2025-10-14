@@ -1,5 +1,3 @@
-import '../components/models/comentario.dart';
-
 class Avistamiento {
   final String id;
   final String nombreComun;
@@ -13,6 +11,8 @@ class Avistamiento {
   final String estadoEspecimen;
   final Habitad habitad;
   final List<Comentario> comentarios;
+  final String tipo;
+  final String nombreUsuario;
 
   Avistamiento({
     required this.id,
@@ -27,6 +27,8 @@ class Avistamiento {
     required this.estadoEspecimen,
     required this.habitad,
     required this.comentarios,
+    required this.tipo,
+    required this.nombreUsuario,
   });
 
   factory Avistamiento.fromJson(Map<String, dynamic> json) {
@@ -37,6 +39,8 @@ class Avistamiento {
       especie: json['especie'] ?? '',
       descripcion: json['descripcion'] ?? '',
       imagen: json['imagen'] ?? '',
+      tipo: json['tipo'] ?? '',
+      nombreUsuario: json['nombre_usuario'] ?? '',
       ubicacion: Ubicacion.fromJson(json['ubicacion'] ?? {}),
       comportamiento: json['comportamiento'] ?? '',
       estadoExtincion: json['estado_extincion'] ?? '',
@@ -48,6 +52,30 @@ class Avistamiento {
               .toList() ??
           [],
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      '_id': id,
+      'nombre_comun': nombreComun,
+      'nombre_cientifico': nombreCientifico,
+      'especie': especie,
+      'descripcion': descripcion,
+      'imagen': imagen,
+      'tipo': tipo,
+      'nombre_usuario': nombreUsuario,
+      'ubicacion': ubicacion.toJson(),
+      'comportamiento': comportamiento,
+      'estado_extincion': estadoExtincion,
+      'estado_especimen': estadoEspecimen,
+      'habitad': habitad.toJson(),
+      'comentarios': comentarios.map((c) => c.toJson()).toList(),
+    };
+  }
+
+  @override
+  String toString() {
+    return 'Avistamiento(id: $id, nombre: $nombreComun, especie: $especie)';
   }
 }
 
@@ -63,6 +91,13 @@ class Ubicacion {
       longitud: (json['longitud'] ?? 0).toDouble(),
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {'latitud': latitud, 'longitud': longitud};
+  }
+
+  @override
+  String toString() => 'Ubicacion(lat: $latitud, lng: $longitud)';
 }
 
 class Habitad {
@@ -83,6 +118,52 @@ class Habitad {
       descripcionHabitat: json['descripcion_habitat'] ?? '',
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id_habitad': idHabitad,
+      'nombre_habitad': nombreHabitad,
+      'descripcion_habitat': descripcionHabitat,
+    };
+  }
+
+  @override
+  String toString() => 'Habitad(nombre: $nombreHabitad)';
+}
+
+class Comentario {
+  final String idUsuario;
+  final String nombreUsuario;
+  final String comentario;
+  final DateTime fecha;
+
+  Comentario({
+    required this.idUsuario,
+    required this.nombreUsuario,
+    required this.comentario,
+    required this.fecha,
+  });
+
+  factory Comentario.fromJson(Map<String, dynamic> json) {
+    return Comentario(
+      idUsuario: json['id_usuario'] ?? '',
+      nombreUsuario: json['nombre_usuario'] ?? '',
+      comentario: json['comentario'] ?? '',
+      fecha: DateTime.parse(json['fecha'] ?? DateTime.now().toIso8601String()),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id_usuario': idUsuario,
+      'nombre_usuario': nombreUsuario,
+      'comentario': comentario,
+      'fecha': fecha.toIso8601String(),
+    };
+  }
+
+  @override
+  String toString() => 'Comentario($nombreUsuario: $comentario)';
 }
 
 class ZonaFrecuente {
@@ -106,4 +187,11 @@ class ZonaFrecuente {
       count: json['count'] ?? 0,
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {'lat': lat, 'lng': lng, 'especie': especie, 'count': count};
+  }
+
+  @override
+  String toString() => 'ZonaFrecuente($especie: $count avistamientos)';
 }

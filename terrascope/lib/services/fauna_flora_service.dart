@@ -1,14 +1,14 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../components/models/fauna_flora_data.dart';
+import '../components/models/avistamiento_model.dart';
 
 class FaunaFloraService {
   final String baseUrl;
 
   FaunaFloraService({required this.baseUrl});
 
-  // Crear nuevo avistamiento
-  Future<FaunaFloraData?> createFaunaFlora(FaunaFloraData data) async {
+  /// Crear nuevo avistamiento
+  Future<Avistamiento?> createFaunaFlora(Avistamiento data) async {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/fauna-flora'),
@@ -20,7 +20,10 @@ class FaunaFloraService {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final responseData = json.decode(response.body);
-        return FaunaFloraData.fromJson(responseData['data']);
+        final jsonData = responseData is Map && responseData.containsKey('data')
+            ? responseData['data']
+            : responseData;
+        return Avistamiento.fromJson(jsonData);
       } else {
         throw Exception('Error al crear avistamiento: ${response.statusCode}');
       }
@@ -29,8 +32,8 @@ class FaunaFloraService {
     }
   }
 
-  // Obtener todos los avistamientos
-  Future<List<FaunaFloraData>> getAllFaunaFlora() async {
+  /// Obtener todos los avistamientos
+  Future<List<Avistamiento>> getAllFaunaFlora() async {
     try {
       final response = await http.get(
         Uri.parse('$baseUrl/fauna-flora'),
@@ -41,18 +44,31 @@ class FaunaFloraService {
 
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
-        List<dynamic> dataList = responseData['data'];
-        return dataList.map((json) => FaunaFloraData.fromJson(json)).toList();
+
+        List<dynamic> dataList;
+
+        if (responseData is List) {
+          dataList = responseData;
+        } else if (responseData is Map && responseData.containsKey('data')) {
+          dataList = responseData['data'];
+        } else {
+          throw Exception('Formato de respuesta no reconocido');
+        }
+
+        return dataList
+            .map((json) => Avistamiento.fromJson(json as Map<String, dynamic>))
+            .toList();
       } else {
         throw Exception('Error al obtener avistamientos: ${response.statusCode}');
       }
     } catch (e) {
+      print('❌ Error en getAllFaunaFlora: $e');
       rethrow;
     }
   }
 
-  // Obtener avistamiento por ID
-  Future<FaunaFloraData?> getFaunaFloraById(String id) async {
+  /// Obtener avistamiento por ID
+  Future<Avistamiento?> getFaunaFloraById(String id) async {
     try {
       final response = await http.get(
         Uri.parse('$baseUrl/fauna-flora/$id'),
@@ -63,7 +79,12 @@ class FaunaFloraService {
 
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
-        return FaunaFloraData.fromJson(responseData['data']);
+
+        final data = responseData is Map && responseData.containsKey('data')
+            ? responseData['data']
+            : responseData;
+
+        return Avistamiento.fromJson(data as Map<String, dynamic>);
       } else if (response.statusCode == 404) {
         return null;
       } else {
@@ -74,8 +95,8 @@ class FaunaFloraService {
     }
   }
 
-  // Obtener avistamientos cercanos
-  Future<List<FaunaFloraData>> getFaunaFloraCerca(
+  /// Obtener avistamientos cercanos por ubicación
+  Future<List<Avistamiento>> getFaunaFloraCerca(
     double latitud,
     double longitud,
     double distanciaKm,
@@ -90,17 +111,29 @@ class FaunaFloraService {
 
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
-        List<dynamic> dataList = responseData['data'];
-        return dataList.map((json) => FaunaFloraData.fromJson(json)).toList();
+
+        List<dynamic> dataList;
+        if (responseData is List) {
+          dataList = responseData;
+        } else if (responseData is Map && responseData.containsKey('data')) {
+          dataList = responseData['data'];
+        } else {
+          throw Exception('Formato de respuesta no reconocido');
+        }
+
+        return dataList
+            .map((json) => Avistamiento.fromJson(json as Map<String, dynamic>))
+            .toList();
       } else {
-        throw Exception('Error al buscar avistamientos cercanos: ${response.statusCode}');
+        throw Exception(
+            'Error al buscar avistamientos cercanos: ${response.statusCode}');
       }
     } catch (e) {
       rethrow;
     }
   }
 
-  // Agregar comentario
+  /// Agregar comentario a un avistamiento
   Future<bool> addComentario(
     String avistamientoId,
     String idUsuario,
@@ -117,10 +150,11 @@ class FaunaFloraService {
           'id_usuario': idUsuario,
           'nombre_usuario': nombreUsuario,
           'comentario': comentario,
+          'fecha': DateTime.now().toIso8601String(),
         }),
       );
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 || response.statusCode == 201) {
         return true;
       } else {
         throw Exception('Error al agregar comentario: ${response.statusCode}');
@@ -130,8 +164,8 @@ class FaunaFloraService {
     }
   }
 
-  // Actualizar avistamiento
-  Future<FaunaFloraData?> updateFaunaFlora(
+  /// Actualizar avistamiento
+  Future<Avistamiento?> updateFaunaFlora(
     String id,
     Map<String, dynamic> updates,
   ) async {
@@ -146,7 +180,10 @@ class FaunaFloraService {
 
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
-        return FaunaFloraData.fromJson(responseData['data']);
+        final jsonData = responseData is Map && responseData.containsKey('data')
+            ? responseData['data']
+            : responseData;
+        return Avistamiento.fromJson(jsonData as Map<String, dynamic>);
       } else {
         throw Exception('Error al actualizar avistamiento: ${response.statusCode}');
       }
@@ -155,7 +192,7 @@ class FaunaFloraService {
     }
   }
 
-  // Eliminar avistamiento
+  /// Eliminar avistamiento
   Future<bool> deleteFaunaFlora(String id) async {
     try {
       final response = await http.delete(
@@ -169,6 +206,74 @@ class FaunaFloraService {
         return true;
       } else {
         throw Exception('Error al eliminar avistamiento: ${response.statusCode}');
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Obtener avistamientos por especie
+  Future<List<Avistamiento>> getFaunaFloraByEspecie(String especie) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/fauna-flora/especie/$especie'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+
+        List<dynamic> dataList;
+        if (responseData is List) {
+          dataList = responseData;
+        } else if (responseData is Map && responseData.containsKey('data')) {
+          dataList = responseData['data'];
+        } else {
+          throw Exception('Formato de respuesta no reconocido');
+        }
+
+        return dataList
+            .map((json) => Avistamiento.fromJson(json as Map<String, dynamic>))
+            .toList();
+      } else {
+        throw Exception(
+            'Error al obtener avistamientos por especie: ${response.statusCode}');
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Obtener avistamientos por usuario
+  Future<List<Avistamiento>> getFaunaFloraByUsuario(String nombreUsuario) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/fauna-flora/usuario/$nombreUsuario'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+
+        List<dynamic> dataList;
+        if (responseData is List) {
+          dataList = responseData;
+        } else if (responseData is Map && responseData.containsKey('data')) {
+          dataList = responseData['data'];
+        } else {
+          throw Exception('Formato de respuesta no reconocido');
+        }
+
+        return dataList
+            .map((json) => Avistamiento.fromJson(json as Map<String, dynamic>))
+            .toList();
+      } else {
+        throw Exception(
+            'Error al obtener avistamientos del usuario: ${response.statusCode}');
       }
     } catch (e) {
       rethrow;

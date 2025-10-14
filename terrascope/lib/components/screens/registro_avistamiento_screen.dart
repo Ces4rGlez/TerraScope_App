@@ -1,588 +1,452 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
-import '../../services/location_service.dart';
-import '../../services/camera_service.dart';
+import 'dart:convert';
 import '../../services/fauna_flora_service.dart';
-import '../models/ubicacion.dart';
-import '../models/habitat.dart';
-import '../models/fauna_flora_data.dart';
+import '../../components/models/avistamiento_model.dart';
+import '../../config/api_config.dart';
 
-class RegistroAvistamientoScreen extends StatefulWidget {
+class HomePage extends StatefulWidget {
+  const HomePage({super.key});
+
   @override
-  _RegistroAvistamientoScreenState createState() =>
-      _RegistroAvistamientoScreenState();
+  State<HomePage> createState() => _HomePageState();
 }
 
-class _RegistroAvistamientoScreenState extends State<RegistroAvistamientoScreen> {
-  // Servicios
-  final LocationService _locationService = LocationService();
-  final CameraService _cameraService = CameraService();
-  final FaunaFloraService _faunaFloraService = FaunaFloraService(
-    baseUrl: 'https://tu-api.com/api', // Cambia por tu URL
-  );
-
-  // Estado
-  File? _imageFile;
-  Ubicacion? _ubicacion;
-  String? _base64Image;
-  bool _isLoading = false;
-
-  // Controladores de formulario
-  final _formKey = GlobalKey<FormState>();
-  final TextEditingController _nombreComunController = TextEditingController();
-  final TextEditingController _nombreCientificoController = TextEditingController();
-  final TextEditingController _especieController = TextEditingController();
-  final TextEditingController _descripcionController = TextEditingController();
-  final TextEditingController _comportamientoController = TextEditingController();
-  final TextEditingController _estadoExtincionController = TextEditingController();
-  final TextEditingController _estadoEspecimenController = TextEditingController();
-  final TextEditingController _nombreHabitadController = TextEditingController();
-  final TextEditingController _descripcionHabitatController = TextEditingController();
-
-  // Listas para dropdowns
-  final List<String> _especies = [
-    'Mamífero',
-    'Ave',
-    'Reptil',
-    'Anfibio',
-    'Pez',
-    'Insecto',
-    'Planta',
-    'Otro'
-  ];
-
-  final List<String> _estadosExtincion = [
-    'No evaluado',
-    'Preocupación menor',
-    'Casi amenazado',
-    'Vulnerable',
-    'En peligro',
-    'En peligro crítico',
-    'Extinto en estado silvestre',
-    'Extinto'
-  ];
-
-  final List<String> _estadosEspecimen = [
-    'Salvaje',
-    'Cautiverio',
-    'Semi-cautiverio',
-    'Desconocido'
-  ];
-
-  String? _especieSeleccionada;
-  String? _estadoExtincionSeleccionado;
-  String? _estadoEspecimenSeleccionado;
+class _HomePageState extends State<HomePage> {
+  late final FaunaFloraService _service;
+  List<Avistamiento> _avistamientos = [];
+  List<Avistamiento> _avistamientosFiltrados = [];
+  bool _isLoading = true;
+  String? _error;
+  String? _filtroEspecie;
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _estadoExtincionSeleccionado = 'No evaluado';
-    _estadoEspecimenSeleccionado = 'Salvaje';
+    _service = FaunaFloraService(baseUrl: ApiConfig.baseUrl);
+    _cargarAvistamientos();
   }
 
-  Future<void> _capturePhotoAndLocation() async {
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      // Tomar foto
-      File? imageFile = await _cameraService.takePhoto();
-      if (imageFile == null) {
-        _showMessage('Captura de foto cancelada', isError: false);
-        setState(() {
-          _isLoading = false;
-        });
-        return;
-      }
-
-      // Obtener ubicación
-      Ubicacion? ubicacion = await _locationService.getCurrentLocation();
-      if (ubicacion == null) {
-        _showMessage('No se pudo obtener la ubicación', isError: true);
-        setState(() {
-          _isLoading = false;
-        });
-        return;
-      }
-
-      // Convertir imagen a Base64
-      String base64Image = await _cameraService.convertImageToBase64(imageFile);
-
-      setState(() {
-        _imageFile = imageFile;
-        _base64Image = base64Image;
-        _ubicacion = ubicacion;
-        _isLoading = false;
-      });
-
-      _showMessage(
-        'Foto capturada en: ${ubicacion.latitud.toStringAsFixed(6)}, ${ubicacion.longitud.toStringAsFixed(6)}',
-        isError: false,
-      );
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-      _showMessage('Error: ${e.toString()}', isError: true);
-    }
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
-  Future<void> _pickFromGallery() async {
-    setState(() {
-      _isLoading = true;
-    });
-
+  Future<void> _cargarAvistamientos() async {
     try {
-      // Seleccionar imagen
-      File? imageFile = await _cameraService.pickImageFromGallery();
-      if (imageFile == null) {
-        _showMessage('Selección cancelada', isError: false);
-        setState(() {
-          _isLoading = false;
-        });
-        return;
-      }
-
-      // Obtener ubicación actual (aunque la foto sea de galería)
-      Ubicacion? ubicacion = await _locationService.getCurrentLocation();
-      if (ubicacion == null) {
-        _showMessage('No se pudo obtener la ubicación', isError: true);
-        setState(() {
-          _isLoading = false;
-        });
-        return;
-      }
-
-      // Convertir imagen a Base64
-      String base64Image = await _cameraService.convertImageToBase64(imageFile);
-
       setState(() {
-        _imageFile = imageFile;
-        _base64Image = base64Image;
-        _ubicacion = ubicacion;
-        _isLoading = false;
+        _isLoading = true;
+        _error = null;
       });
-
-      _showMessage('Imagen seleccionada', isError: false);
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-      _showMessage('Error: ${e.toString()}', isError: true);
-    }
-  }
-
-  Future<void> _submitData() async {
-    if (_imageFile == null || _ubicacion == null) {
-      _showMessage('Primero debes capturar una foto', isError: true);
-      return;
-    }
-
-    if (!_formKey.currentState!.validate()) {
-      _showMessage('Completa todos los campos obligatorios', isError: true);
-      return;
-    }
-
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      final faunaFloraData = FaunaFloraData(
-        nombreComun: _nombreComunController.text,
-        nombreCientifico: _nombreCientificoController.text,
-        especie: _especieSeleccionada ?? _especieController.text,
-        descripcion: _descripcionController.text,
-        imagenBase64: _base64Image!,
-        ubicacion: _ubicacion!,
-        comportamiento: _comportamientoController.text,
-        estadoExtincion: _estadoExtincionSeleccionado!,
-        estadoEspecimen: _estadoEspecimenSeleccionado!,
-        habitad: Habitat(
-          nombreHabitad: _nombreHabitadController.text,
-          descripcionHabitat: _descripcionHabitatController.text.isNotEmpty
-              ? _descripcionHabitatController.text
-              : null,
-        ),
-      );
-
-      await _faunaFloraService.createFaunaFlora(faunaFloraData);
-
-      setState(() {
-        _isLoading = false;
-      });
-
-      _showMessage('¡Avistamiento registrado exitosamente!', isError: false);
       
-      // Limpiar formulario
-      _clearForm();
+      final avistamientos = await _service.getAllFaunaFlora();
       
-      // Opcional: Navegar a otra pantalla
-      // Navigator.pop(context);
-    } catch (e) {
       setState(() {
+        _avistamientos = avistamientos;
+        _avistamientosFiltrados = avistamientos;
         _isLoading = false;
       });
-      _showMessage('Error al registrar: ${e.toString()}', isError: true);
+    } catch (e) {
+      setState(() {
+        _error = 'Error al cargar avistamientos: $e';
+        _isLoading = false;
+      });
     }
   }
 
-  void _clearForm() {
+  void _applyFilter(String? especie) {
     setState(() {
-      _imageFile = null;
-      _ubicacion = null;
-      _base64Image = null;
-      _especieSeleccionada = null;
-      _estadoExtincionSeleccionado = 'No evaluado';
-      _estadoEspecimenSeleccionado = 'Salvaje';
+      _filtroEspecie = especie;
+      _filtrarAvistamientos();
     });
-    _nombreComunController.clear();
-    _nombreCientificoController.clear();
-    _especieController.clear();
-    _descripcionController.clear();
-    _comportamientoController.clear();
-    _estadoExtincionController.clear();
-    _estadoEspecimenController.clear();
-    _nombreHabitadController.clear();
-    _descripcionHabitatController.clear();
   }
 
-  void _showMessage(String message, {required bool isError}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: isError ? Colors.red : Colors.green,
-        duration: Duration(seconds: 3),
-      ),
-    );
+  void _filtrarAvistamientos() {
+    List<Avistamiento> filtrados = _avistamientos;
+
+    // Filtrar por especie
+    if (_filtroEspecie != null) {
+      filtrados = filtrados.where((a) => 
+        a.especie.toLowerCase() == _filtroEspecie!.toLowerCase()
+      ).toList();
+    }
+
+    // Filtrar por búsqueda
+    if (_searchController.text.isNotEmpty) {
+      final query = _searchController.text.toLowerCase();
+      filtrados = filtrados.where((a) =>
+        a.nombreComun.toLowerCase().contains(query) ||
+        a.nombreCientifico.toLowerCase().contains(query)
+      ).toList();
+    }
+
+    setState(() {
+      _avistamientosFiltrados = filtrados;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF5C6445),
       appBar: AppBar(
-        title: Text('Registrar Avistamiento'),
+        backgroundColor: const Color(0xFF5C6445),
         elevation: 0,
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: const [
+            Text(
+              'TerraScope',
+              style: TextStyle(
+                color: Color(0xFFE0E0E0),
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(width: 8),
+            Icon(Icons.eco, color: Color(0xFFE0E0E0), size: 28),
+          ],
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.camera_alt, color: Color(0xFFE0E0E0)),
+            onPressed: () {
+              // Navegar a pantalla de crear avistamiento
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.settings, color: Color(0xFFE0E0E0)),
+            onPressed: () {},
+          ),
+        ],
       ),
       body: _isLoading
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 16),
-                  Text('Procesando...'),
-                ],
+          ? const Center(
+              child: CircularProgressIndicator(
+                color: Color(0xFFE0E0E0),
               ),
             )
-          : SingleChildScrollView(
-              padding: EdgeInsets.all(16),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Botones para capturar foto
-                    Row(
+          : _error != null
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: _capturePhotoAndLocation,
-                            icon: Icon(Icons.camera_alt),
-                            label: Text('Tomar Foto'),
-                            style: ElevatedButton.styleFrom(
-                              padding: EdgeInsets.all(16),
-                            ),
+                        Icon(
+                          Icons.error_outline,
+                          size: 64,
+                          color: Colors.grey[400],
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          _error!,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            color: Color(0xFFE0E0E0),
                           ),
                         ),
-                        SizedBox(width: 8),
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: _pickFromGallery,
-                            icon: Icon(Icons.photo_library),
-                            label: Text('Galería'),
-                            style: OutlinedButton.styleFrom(
-                              padding: EdgeInsets.all(16),
-                            ),
+                        const SizedBox(height: 24),
+                        ElevatedButton.icon(
+                          onPressed: _cargarAvistamientos,
+                          icon: const Icon(Icons.refresh),
+                          label: const Text('Reintentar'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF939E69),
+                            foregroundColor: Colors.white,
                           ),
                         ),
                       ],
                     ),
-                    SizedBox(height: 16),
-
-                    // Mostrar imagen capturada
-                    if (_imageFile != null) ...[
-                      Container(
-                        height: 250,
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: Image.file(_imageFile!, fit: BoxFit.cover),
-                        ),
-                      ),
-                      SizedBox(height: 8),
-                      if (_ubicacion != null)
-                        Container(
-                          padding: EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.blue.shade50,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(Icons.location_on, color: Colors.blue, size: 20),
-                              SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  'Lat: ${_ubicacion!.latitud.toStringAsFixed(6)}, Lng: ${_ubicacion!.longitud.toStringAsFixed(6)}',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.blue.shade900,
-                                    fontWeight: FontWeight.w500,
+                  ),
+                )
+              : Column(
+                  children: [
+                    _buildSearchAndFilters(),
+                    Expanded(
+                      child: _avistamientosFiltrados.isEmpty
+                          ? Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.pets_outlined,
+                                    size: 80,
+                                    color: Colors.grey[400],
                                   ),
-                                ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    'No hay avistamientos',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      color: Colors.grey[400],
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
-                        ),
-                      SizedBox(height: 24),
-                    ],
-
-                    // Formulario
-                    Text(
-                      'Información del Especimen',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
+                            )
+                          : RefreshIndicator(
+                              onRefresh: _cargarAvistamientos,
+                              color: const Color(0xFF5C6445),
+                              child: ListView.builder(
+                                itemCount: _avistamientosFiltrados.length,
+                                padding: const EdgeInsets.only(bottom: 16),
+                                itemBuilder: (context, index) {
+                                  return AvistamientoCard(
+                                    data: _avistamientosFiltrados[index],
+                                    onTap: () {
+                                     
+                                    },
+                                  );
+                                },
+                              ),
+                            ),
                     ),
-                    SizedBox(height: 16),
-
-                    TextFormField(
-                      controller: _nombreComunController,
-                      decoration: InputDecoration(
-                        labelText: 'Nombre Común *',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.pets),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Este campo es obligatorio';
-                        }
-                        return null;
-                      },
-                    ),
-                    SizedBox(height: 12),
-
-                    TextFormField(
-                      controller: _nombreCientificoController,
-                      decoration: InputDecoration(
-                        labelText: 'Nombre Científico *',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.science),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Este campo es obligatorio';
-                        }
-                        return null;
-                      },
-                    ),
-                    SizedBox(height: 12),
-
-                    DropdownButtonFormField<String>(
-                      value: _especieSeleccionada,
-                      decoration: InputDecoration(
-                        labelText: 'Especie *',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.category),
-                      ),
-                      items: _especies.map((especie) {
-                        return DropdownMenuItem(
-                          value: especie,
-                          child: Text(especie),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        setState(() {
-                          _especieSeleccionada = value;
-                        });
-                      },
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Selecciona una especie';
-                        }
-                        return null;
-                      },
-                    ),
-                    SizedBox(height: 12),
-
-                    TextFormField(
-                      controller: _descripcionController,
-                      decoration: InputDecoration(
-                        labelText: 'Descripción *',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.description),
-                        hintText: 'Describe las características del especimen',
-                      ),
-                      maxLines: 3,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Este campo es obligatorio';
-                        }
-                        return null;
-                      },
-                    ),
-                    SizedBox(height: 12),
-
-                    TextFormField(
-                      controller: _comportamientoController,
-                      decoration: InputDecoration(
-                        labelText: 'Comportamiento *',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.psychology),
-                        hintText: 'Ej: Nocturno, cazador solitario',
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Este campo es obligatorio';
-                        }
-                        return null;
-                      },
-                    ),
-                    SizedBox(height: 12),
-
-                    DropdownButtonFormField<String>(
-                      value: _estadoExtincionSeleccionado,
-                      decoration: InputDecoration(
-                        labelText: 'Estado de Extinción *',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.warning),
-                      ),
-                      items: _estadosExtincion.map((estado) {
-                        return DropdownMenuItem(
-                          value: estado,
-                          child: Text(estado),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        setState(() {
-                          _estadoExtincionSeleccionado = value;
-                        });
-                      },
-                    ),
-                    SizedBox(height: 12),
-
-                    DropdownButtonFormField<String>(
-                      value: _estadoEspecimenSeleccionado,
-                      decoration: InputDecoration(
-                        labelText: 'Estado del Especimen *',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.info),
-                      ),
-                      items: _estadosEspecimen.map((estado) {
-                        return DropdownMenuItem(
-                          value: estado,
-                          child: Text(estado),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        setState(() {
-                          _estadoEspecimenSeleccionado = value;
-                        });
-                      },
-                    ),
-                    SizedBox(height: 24),
-
-                    Text(
-                      'Información del Hábitat',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 16),
-
-                    TextFormField(
-                      controller: _nombreHabitadController,
-                      decoration: InputDecoration(
-                        labelText: 'Nombre del Hábitat *',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.terrain),
-                        hintText: 'Ej: Selva tropical, Bosque templado',
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Este campo es obligatorio';
-                        }
-                        return null;
-                      },
-                    ),
-                    SizedBox(height: 12),
-
-                    TextFormField(
-                      controller: _descripcionHabitatController,
-                      decoration: InputDecoration(
-                        labelText: 'Descripción del Hábitat (Opcional)',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.landscape),
-                        hintText: 'Describe el entorno donde se encontró',
-                      ),
-                      maxLines: 2,
-                    ),
-                    SizedBox(height: 32),
-
-                    // Botón de envío
-                    ElevatedButton(
-                      onPressed: _submitData,
-                      child: Padding(
-                        padding: EdgeInsets.all(16),
-                        child: Text(
-                          'Registrar Avistamiento',
-                          style: TextStyle(fontSize: 16),
-                        ),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        foregroundColor: Colors.white,
-                      ),
-                    ),
-                    SizedBox(height: 8),
-
-                    // Botón para limpiar
-                    OutlinedButton(
-                      onPressed: _clearForm,
-                      child: Padding(
-                        padding: EdgeInsets.all(16),
-                        child: Text(
-                          'Limpiar Formulario',
-                          style: TextStyle(fontSize: 16),
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 24),
                   ],
                 ),
-              ),
-            ),
+      bottomNavigationBar: BottomNavigationBar(
+        backgroundColor: const Color(0xFFE0E0E0),
+        selectedItemColor: const Color(0xFF5C6445),
+        unselectedItemColor: Colors.grey,
+        currentIndex: 0,
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
+          BottomNavigationBarItem(icon: Icon(Icons.map), label: ''),
+        ],
+      ),
     );
   }
 
+  Widget _buildSearchAndFilters() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      color: const Color(0xFF5C6445),
+      child: Column(
+        children: [
+          TextField(
+            controller: _searchController,
+            onChanged: (value) => _filtrarAvistamientos(),
+            decoration: InputDecoration(
+              filled: true,
+              fillColor: Colors.white,
+              hintText: 'Buscar...',
+              prefixIcon: const Icon(Icons.search),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              _buildFilterChip('Todos', null),
+              const SizedBox(width: 8),
+              _buildFilterChip('Fauna', 'Fauna'),
+              const SizedBox(width: 8),
+              _buildFilterChip('Flora', 'Flora'),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilterChip(String label, String? value) {
+    final isSelected = _filtroEspecie == value;
+    return FilterChip(
+      label: Text(label),
+      selected: isSelected,
+      onSelected: (selected) {
+        _applyFilter(selected ? value : null);
+      },
+      backgroundColor: Colors.white,
+      selectedColor: const Color(0xFF939E69),
+      labelStyle: TextStyle(
+        color: isSelected ? Colors.black : Colors.grey[700],
+        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+      ),
+    );
+  }
+}
+
+class AvistamientoCard extends StatelessWidget {
+  final Avistamiento data;
+  final VoidCallback onTap;
+
+  const AvistamientoCard({
+    super.key,
+    required this.data,
+    required this.onTap,
+  });
+
   @override
-  void dispose() {
-    _nombreComunController.dispose();
-    _nombreCientificoController.dispose();
-    _especieController.dispose();
-    _descripcionController.dispose();
-    _comportamientoController.dispose();
-    _estadoExtincionController.dispose();
-    _estadoEspecimenController.dispose();
-    _nombreHabitadController.dispose();
-    _descripcionHabitatController.dispose();
-    super.dispose();
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 0),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(0)),
+      elevation: 1,
+      color: const Color(0xFFE0E0E0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header con usuario
+          Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  backgroundColor: const Color(0xFF5C6445),
+                  radius: 20,
+                  child: Text(
+                    data.nombreComun[0].toUpperCase(),
+                    style: const TextStyle(
+                      color: Color(0xFFE0E0E0),
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Text(
+                    '@NombreUsuario',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.more_vert, color: Colors.black54),
+                  onPressed: () {},
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+              ],
+            ),
+          ),
+          
+          // Imagen del avistamiento
+          GestureDetector(
+            onTap: onTap,
+            child: Container(
+              width: double.infinity,
+              height: 250,
+              color: Colors.grey[300],
+              child: data.imagen.isNotEmpty
+                  ? Image.memory(
+                      base64Decode(data.imagen),
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return _buildPlaceholder();
+                      },
+                    )
+                  : _buildPlaceholder(),
+            ),
+          ),
+          
+          // Información del avistamiento
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  data.nombreComun,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  data.nombreCientifico,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey[700],
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  data.descripcion,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    height: 1.4,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.favorite_border),
+                      onPressed: () {},
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      iconSize: 28,
+                      color: const Color(0xFF5C6445),
+                    ),
+                    const Spacer(),
+                    ElevatedButton(
+                      onPressed: onTap,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF5C6445),
+                        foregroundColor: const Color(0xFFE0E0E0),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 10,
+                        ),
+                      ),
+                      child: const Text('Ver a detalle'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPlaceholder() {
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        Icon(
+          Icons.image_outlined,
+          size: 80,
+          color: Colors.grey[400],
+        ),
+        Positioned(
+          bottom: 60,
+          right: 80,
+          child: Icon(
+            Icons.pets,
+            size: 50,
+            color: Colors.grey[300],
+          ),
+        ),
+        Positioned(
+          top: 80,
+          left: 100,
+          child: Icon(
+            Icons.nature,
+            size: 40,
+            color: Colors.grey[300],
+          ),
+        ),
+      ],
+    );
   }
 }

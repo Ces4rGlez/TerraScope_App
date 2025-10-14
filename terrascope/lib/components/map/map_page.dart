@@ -4,10 +4,11 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
-import '../../models/avistamiento_model.dart';
+import '../models/avistamiento_model.dart';
 import '../../services/avistamiento_service.dart';
 import 'avistamiento_detail_card.dart';
 import 'avistamiento_detail_page.dart';
+import '../screens/pagina_inicio.dart';
 
 class MapPage extends StatefulWidget {
   final String? usuarioId;
@@ -30,6 +31,7 @@ class _MapPageState extends State<MapPage> {
   bool _isLoading = true;
   bool _locationError = false;
   bool _isSearching = false;
+  int _currentIndex = 0;
 
   @override
   void initState() {
@@ -494,7 +496,21 @@ class _MapPageState extends State<MapPage> {
         backgroundColor: const Color(0xFFE0E0E0),
         selectedItemColor: const Color(0xFF5C6445),
         unselectedItemColor: Colors.grey,
-        currentIndex: 1,
+        currentIndex: _currentIndex,
+        onTap: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+
+          if (index == 0) {
+            // Navega a home
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const HomePage()),
+            );
+          }
+          // Si es índice 1 (mapa), no hace nada porque ya estamos en MapPage
+        },
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
           BottomNavigationBarItem(icon: Icon(Icons.map), label: ''),
