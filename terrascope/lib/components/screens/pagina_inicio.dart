@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import '../../services/fauna_flora_service.dart';
-import '../../components/models/fauna_flora_data.dart';
+import '../../components/models/avistamiento_model.dart';
 import '../../config/api_config.dart';
+import '../map/map_page.dart';
+import '../map/avistamiento_detail_loader.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -13,11 +15,12 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   late final FaunaFloraService _service;
-  List<FaunaFloraData> _avistamientos = [];
-  List<FaunaFloraData> _avistamientosFiltrados = [];
+  List<Avistamiento> _avistamientos = [];
+  List<Avistamiento> _avistamientosFiltrados = [];
   bool _isLoading = true;
   String? _error;
-  String? _filtroEspecie;
+  int _currentIndex = 0;
+  String? _filtroTipo;
   final TextEditingController _searchController = TextEditingController();
 
   @override
@@ -44,6 +47,15 @@ class _HomePageState extends State<HomePage> {
       final avistamientos = await _service.getAllFaunaFlora();
       print('✅ Avistamientos cargados: ${avistamientos.length}');
       
+      // Debuggear el primer avistamiento
+      if (avistamientos.isNotEmpty) {
+        final first = avistamientos[0];
+        print('📋 Primer avistamiento:');
+        print('  - nombre_comun: ${first.nombreComun}');
+        print('  - tipo: ${first.tipo}');
+        print('  - nombre_usuario: ${first.nombreUsuario}');
+      }
+      
       if (mounted) {
         setState(() {
           _avistamientos = avistamientos;
@@ -65,20 +77,21 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  void _applyFilter(String? especie) {
+ void _applyFilter(String? tipo) {
     setState(() {
-      _filtroEspecie = especie;
-      _filtrarAvistamientos();
+      _filtroTipo = tipo;
+      
     });
+    _filtrarAvistamientos();
   }
 
   void _filtrarAvistamientos() {
-    List<FaunaFloraData> filtrados = _avistamientos;
+    List<Avistamiento> filtrados = _avistamientos;
 
-    // Filtrar por especie
-    if (_filtroEspecie != null) {
+    // Filtrar por tipo (Fauna o Flora)
+    if (_filtroTipo != null) {
       filtrados = filtrados.where((a) => 
-        a.especie.toLowerCase() == _filtroEspecie!.toLowerCase()
+        a.tipo.toLowerCase() == _filtroTipo!.toLowerCase()
       ).toList();
     }
 
@@ -95,6 +108,7 @@ class _HomePageState extends State<HomePage> {
       _avistamientosFiltrados = filtrados;
     });
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -212,6 +226,7 @@ class _HomePageState extends State<HomePage> {
                                     onTap: () {
                                      
                                     },
+                                    service: _service ,
                                   );
                                 },
                               ),
@@ -219,18 +234,41 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ],
                 ),
-      bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: const Color(0xFFE0E0E0),
-        selectedItemColor: const Color(0xFF5C6445),
-        unselectedItemColor: Colors.grey,
-        currentIndex: 0,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.map), label: ''),
-        ],
-      ),
+     bottomNavigationBar: BottomNavigationBar(
+  backgroundColor: const Color(0xFFE0E0E0),
+  selectedItemColor: const Color(0xFF5C6445),
+  unselectedItemColor: Colors.grey,
+  currentIndex: _currentIndex,
+  onTap: (index) {
+    setState(() {
+      _currentIndex = index;
+    });
+    
+    if (index == 1) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const MapPage(),
+        ),
+      );
+      // Vuelve al índice 0 después de navegar
+      Future.delayed(const Duration(milliseconds: 500), () {
+        setState(() {
+          _currentIndex = 0;
+        });
+      });
+    }
+  },
+  items: const [
+    BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
+    BottomNavigationBarItem(icon: Icon(Icons.map), label: ''),
+  ],
+),
     );
   }
+  
+  
+
 
   Widget _buildSearchAndFilters() {
     return Container(
@@ -268,7 +306,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildFilterChip(String label, String? value) {
-    final isSelected = _filtroEspecie == value;
+    final isSelected = _filtroTipo == value;
     return FilterChip(
       label: Text(label),
       selected: isSelected,
@@ -286,13 +324,15 @@ class _HomePageState extends State<HomePage> {
 }
 
 class AvistamientoCard extends StatelessWidget {
-  final FaunaFloraData data;
+  final Avistamiento data;
   final VoidCallback onTap;
+  final FaunaFloraService service;
 
   const AvistamientoCard({
     super.key,
     required this.data,
     required this.onTap,
+    required this.service, 
   });
 
   // Obtener icono según estado de extinción
@@ -348,10 +388,11 @@ class AvistamientoCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 12),
-                const Expanded(
+                Expanded(
                   child: Text(
-                    '@NombreUsuario',
-                    style: TextStyle(
+                    '@${data.nombreUsuario}',
+
+                    style: const TextStyle(
                       fontWeight: FontWeight.w600,
                       fontSize: 14,
                       color: Colors.black87,
@@ -375,9 +416,9 @@ class AvistamientoCard extends StatelessWidget {
               width: double.infinity,
               height: 250,
               color: Colors.grey[300],
-              child: data.imagenBase64.isNotEmpty
+              child: data.imagen.isNotEmpty
                   ? Image.memory(
-                      base64Decode(data.imagenBase64),
+                      base64Decode(data.imagen),
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) {
                         return _buildPlaceholder();
@@ -416,13 +457,13 @@ class AvistamientoCard extends StatelessWidget {
                 // Especie
                 Row(
                   children: [
-                    Icon(
-                      data.especie.toLowerCase() == 'flora' 
-                        ? Icons.local_florist 
-                        : Icons.pets,
-                      size: 18,
-                      color: const Color(0xFF5C6445),
-                    ),
+                 Icon(
+                     data.tipo.toLowerCase() == 'Flora' 
+                      ? Icons.local_florist 
+                      : Icons.pets,
+                    size: 18,
+                    color: const Color(0xFF5C6445),
+                  ),
                     const SizedBox(width: 6),
                     Text(
                       data.especie,
@@ -477,25 +518,35 @@ class AvistamientoCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 
-                // Botón ver detalle
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: ElevatedButton(
-                    onPressed: onTap,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF5C6445),
-                      foregroundColor: const Color(0xFFE0E0E0),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 10,
-                      ),
-                    ),
-                    child: const Text('Ver a detalle'),
-                  ),
-                ),
+               // Botón ver detalle - REEMPLAZA ESTO
+Align(
+  alignment: Alignment.centerRight,
+  child: ElevatedButton(
+    onPressed: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => AvistamientoDetailLoader(
+            avistamientoId: data.id,
+            service: service,
+          ),
+        ),
+      );
+    },
+    style: ElevatedButton.styleFrom(
+      backgroundColor: const Color(0xFF5C6445),
+      foregroundColor: const Color(0xFFE0E0E0),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 24,
+        vertical: 10,
+      ),
+    ),
+    child: const Text('Ver a detalle'),
+  ),
+)
               ],
             ),
           ),
