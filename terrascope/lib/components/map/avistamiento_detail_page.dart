@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import '../models/avistamiento_model.dart';
-import '../models/comentario.dart' hide Comentario;
+import '../models/comentario.dart';
 import '../../services/avistamiento_service.dart';
 
 class AvistamientoDetailPage extends StatefulWidget {
@@ -31,6 +31,48 @@ class _AvistamientoDetailPageState extends State<AvistamientoDetailPage> {
   void initState() {
     super.initState();
     _comentarios = List.from(widget.avistamiento.comentarios);
+  }
+
+  Future<void> _agregarComentario() async {
+    if (_comentarioController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Por favor ingresa un comentario')),
+      );
+      return;
+    }
+
+    setState(() => _isSubmitting = true);
+
+    try {
+      await AvistamientoService.addComentario(
+        widget.avistamiento.id,
+        widget.usuarioId ?? '000000000000000000000000',
+        widget.nombreUsuario ?? 'Usuario Anónimo',
+        _comentarioController.text.trim(),
+      );
+
+      setState(() {
+        _comentarios.add(
+          Comentario(
+            idUsuario: widget.usuarioId,
+            nombreUsuario: widget.nombreUsuario ?? 'Usuario Anónimo',
+            comentario: _comentarioController.text.trim(),
+            fecha: DateTime.now(),
+          ),
+        );
+        _comentarioController.clear();
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Comentario agregado exitosamente')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al agregar comentario: $e')),
+      );
+    } finally {
+      setState(() => _isSubmitting = false);
+    }
   }
 
   @override
@@ -556,7 +598,36 @@ class _AvistamientoDetailPageState extends State<AvistamientoDetailPage> {
             ),
           ),
           const SizedBox(height: 12),
-          SizedBox(width: double.infinity),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _isSubmitting ? null : _agregarComentario,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF5C6445),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: _isSubmitting
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : const Text(
+                      'Publicar Comentario',
+                      style: TextStyle(
+                        color: Color(0xFFE0E0E0),
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+            ),
+          ),
         ],
       ),
     );

@@ -47,7 +47,7 @@ class AvistamientoService {
 
   static Future<void> addComentario(
     String avistamientoId,
-    String? usuarioId,
+    String usuarioId,
     String nombreUsuario,
     String comentario,
   ) async {
@@ -55,9 +55,7 @@ class AvistamientoService {
       Uri.parse('${ApiConfig.baseUrl}/fauna-flora/$avistamientoId/comentarios'),
       headers: {'Content-Type': 'application/json'},
       body: json.encode({
-        if (usuarioId != null &&
-            usuarioId.isNotEmpty &&
-            usuarioId != '000000000000000000000000')
+        if (usuarioId.isNotEmpty && usuarioId != '000000000000000000000000')
           'id_usuario': usuarioId,
         'nombre_usuario': nombreUsuario,
         'comentario': comentario,

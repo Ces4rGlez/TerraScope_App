@@ -1,3 +1,5 @@
+import '../models/comentario.dart';
+
 class Avistamiento {
   final String id;
   final String nombreComun;
@@ -129,41 +131,6 @@ class Habitad {
 
   @override
   String toString() => 'Habitad(nombre: $nombreHabitad)';
-}
-
-class Comentario {
-  final String idUsuario;
-  final String nombreUsuario;
-  final String comentario;
-  final DateTime fecha;
-
-  Comentario({
-    required this.idUsuario,
-    required this.nombreUsuario,
-    required this.comentario,
-    required this.fecha,
-  });
-
-  factory Comentario.fromJson(Map<String, dynamic> json) {
-    return Comentario(
-      idUsuario: json['id_usuario'] ?? '',
-      nombreUsuario: json['nombre_usuario'] ?? '',
-      comentario: json['comentario'] ?? '',
-      fecha: DateTime.parse(json['fecha'] ?? DateTime.now().toIso8601String()),
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'id_usuario': idUsuario,
-      'nombre_usuario': nombreUsuario,
-      'comentario': comentario,
-      'fecha': fecha.toIso8601String(),
-    };
-  }
-
-  @override
-  String toString() => 'Comentario($nombreUsuario: $comentario)';
 }
 
 class ZonaFrecuente {
