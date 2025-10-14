@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import '../../services/fauna_flora_service.dart';
-import '../../components/models/fauna_flora_data.dart';
+import '../../components/models/avistamiento_model.dart';
 import '../../config/api_config.dart';
 
 class HomePage extends StatefulWidget {
@@ -13,8 +13,8 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   late final FaunaFloraService _service;
-  List<FaunaFloraData> _avistamientos = [];
-  List<FaunaFloraData> _avistamientosFiltrados = [];
+  List<Avistamiento> _avistamientos = [];
+  List<Avistamiento> _avistamientosFiltrados = [];
   bool _isLoading = true;
   String? _error;
   String? _filtroEspecie;
@@ -63,7 +63,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _filtrarAvistamientos() {
-    List<FaunaFloraData> filtrados = _avistamientos;
+    List<Avistamiento> filtrados = _avistamientos;
 
     // Filtrar por especie
     if (_filtroEspecie != null) {
@@ -273,7 +273,7 @@ class _HomePageState extends State<HomePage> {
 }
 
 class AvistamientoCard extends StatelessWidget {
-  final FaunaFloraData data;
+  final Avistamiento data;
   final VoidCallback onTap;
 
   const AvistamientoCard({
@@ -336,9 +336,9 @@ class AvistamientoCard extends StatelessWidget {
               width: double.infinity,
               height: 250,
               color: Colors.grey[300],
-              child: data.imagenBase64.isNotEmpty
+              child: data.imagen.isNotEmpty
                   ? Image.memory(
-                      base64Decode(data.imagenBase64),
+                      base64Decode(data.imagen),
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) {
                         return _buildPlaceholder();
