@@ -20,13 +20,15 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
         useMaterial3: true,
       ),
-      initialRoute: '/home',
+      initialRoute: '/login',
       routes: {
         '/login': (context) => const LoginPage(),
         '/register': (context) => const RegisterPage(),
         '/map': (context) => const MapPage(),
         '/home': (context) => const HomePage(),
       },
+
+      //Aquí se usa onGenerateRoute para pasar los datos dinámicos
       onGenerateRoute: (settings) {
         if (settings.name == '/home') {}
 

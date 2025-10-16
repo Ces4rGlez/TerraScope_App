@@ -5,6 +5,7 @@ import '../../components/models/avistamiento_model.dart';
 import '../../config/api_config.dart';
 import '../map/map_page.dart';
 import '../map/avistamiento_detail_loader.dart';
+import '../screens/registro_avistamiento_screen.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -137,6 +138,13 @@ class _HomePageState extends State<HomePage> {
           IconButton(
             icon: const Icon(Icons.camera_alt, color: Color(0xFFE0E0E0)),
             onPressed: () async {
+              final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const CreateAvistamientoScreen(),
+      ),
+    );
+             
               // Navegar a pantalla de crear avistamiento
 
               // Si se creó un avistamiento, recargar la lista

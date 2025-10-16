@@ -1,30 +1,28 @@
 class Habitat {
-  final String? idHabitad;
-  final String nombreHabitad;
-  final String? descripcionHabitat;
+  final String idHabitat;
+  final String nombreHabitat;
+  final String descripcionHabitat;
 
   Habitat({
-    this.idHabitad,
-    required this.nombreHabitad,
-    this.descripcionHabitat,
+    required this.idHabitat,
+    required this.nombreHabitat,
+    required this.descripcionHabitat,
   });
 
   Map<String, dynamic> toJson() => {
-        'id_habitad': idHabitad,
-        'nombre_habitad': nombreHabitad,
+        'id_habitat': idHabitat,
+        'nombre_habitat': nombreHabitat,
         'descripcion_habitat': descripcionHabitat,
       };
 
   factory Habitat.fromJson(Map<String, dynamic> json) {
     return Habitat(
-      idHabitad: json['id_habitad'],
-      nombreHabitad: json['nombre_habitad'] ?? '',
-      descripcionHabitat: json['descripcion_habitat'],
+      idHabitat: json['id_habitat'] ?? '',  // ← Valor por defecto si es null
+      nombreHabitat: json['nombre_habitat'] ?? 'Sin nombre',  // ← Valor por defecto
+      descripcionHabitat: json['descripcion_habitat'] ?? 'Sin descripción',  // ← Valor por defecto
     );
   }
 
   @override
-  String toString() {
-    return 'Habitat(nombre: $nombreHabitad)';
-  }
+  String toString() => 'Habitat(nombre: $nombreHabitat)';
 }

@@ -117,7 +117,7 @@ class AvistamientoDetailCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      avistamiento.habitad.nombreHabitad,
+                      avistamiento.habitat.nombreHabitat,
                       style: const TextStyle(fontSize: 12),
                     ),
                   ],
