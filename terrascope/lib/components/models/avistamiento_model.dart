@@ -1,3 +1,5 @@
+import 'habitat.dart';
+
 class Avistamiento {
   final String id;
   final String nombreComun;
@@ -9,7 +11,7 @@ class Avistamiento {
   final String comportamiento;
   final String estadoExtincion;
   final String estadoEspecimen;
-  final Habitad habitad;
+  final Habitat habitat;
   final List<Comentario> comentarios;
   final String tipo;
   final String nombreUsuario;
@@ -25,33 +27,33 @@ class Avistamiento {
     required this.comportamiento,
     required this.estadoExtincion,
     required this.estadoEspecimen,
-    required this.habitad,
+    required this.habitat,
     required this.comentarios,
     required this.tipo,
     required this.nombreUsuario,
   });
 
   factory Avistamiento.fromJson(Map<String, dynamic> json) {
-    return Avistamiento(
-      id: json['_id'] ?? '',
-      nombreComun: json['nombre_comun'] ?? '',
-      nombreCientifico: json['nombre_cientifico'] ?? '',
-      especie: json['especie'] ?? '',
-      descripcion: json['descripcion'] ?? '',
-      imagen: json['imagen'] ?? '',
-      tipo: json['tipo'] ?? '',
-      nombreUsuario: json['nombre_usuario'] ?? '',
-      ubicacion: Ubicacion.fromJson(json['ubicacion'] ?? {}),
-      comportamiento: json['comportamiento'] ?? '',
-      estadoExtincion: json['estado_extincion'] ?? '',
-      estadoEspecimen: json['estado_especimen'] ?? '',
-      habitad: Habitad.fromJson(json['habitad'] ?? {}),
-      comentarios: (json['comentarios'] as List?)
-              ?.map((c) => Comentario.fromJson(c))
-              .toList() ??
-          [],
-    );
-  }
+  return Avistamiento(
+    id: json['_id'] ?? '',
+    nombreComun: json['nombre_comun'] ?? '',
+    nombreCientifico: json['nombre_cientifico'] ?? '',
+    especie: json['especie'] ?? '',
+    descripcion: json['descripcion'] ?? '',
+    imagen: json['imagen'] ?? '',
+    tipo: json['tipo'] ?? '',
+    nombreUsuario: json['nombre_usuario'] ?? '',
+    ubicacion: Ubicacion.fromJson(json['ubicacion'] ?? {}),
+    comportamiento: json['comportamiento'] ?? '',
+    estadoExtincion: json['estado_extincion'] ?? '',
+    estadoEspecimen: json['estado_especimen'] ?? '',
+    habitat: Habitat.fromJson(json['habitat'] ?? {}),  // ← Maneja habitat null
+    comentarios: (json['comentarios'] as List?)
+            ?.map((c) => Comentario.fromJson(c))
+            .toList() ??
+        [],
+  );
+}
 
   Map<String, dynamic> toJson() {
     return {
@@ -67,7 +69,7 @@ class Avistamiento {
       'comportamiento': comportamiento,
       'estado_extincion': estadoExtincion,
       'estado_especimen': estadoEspecimen,
-      'habitad': habitad.toJson(),
+      'habitat': habitat.toJson(),
       'comentarios': comentarios.map((c) => c.toJson()).toList(),
     };
   }
@@ -105,36 +107,6 @@ class Ubicacion {
   String toString() => 'Ubicacion(lat: $latitud, lng: $longitud)';
 }
 
-class Habitad {
-  final String idHabitad;
-  final String nombreHabitad;
-  final String descripcionHabitat;
-
-  Habitad({
-    required this.idHabitad,
-    required this.nombreHabitad,
-    required this.descripcionHabitat,
-  });
-
-  factory Habitad.fromJson(Map<String, dynamic> json) {
-    return Habitad(
-      idHabitad: json['id_habitad'] ?? '',
-      nombreHabitad: json['nombre_habitad'] ?? '',
-      descripcionHabitat: json['descripcion_habitat'] ?? '',
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'id_habitad': idHabitad,
-      'nombre_habitad': nombreHabitad,
-      'descripcion_habitat': descripcionHabitat,
-    };
-  }
-
-  @override
-  String toString() => 'Habitad(nombre: $nombreHabitad)';
-}
 
 class Comentario {
   final String idUsuario;

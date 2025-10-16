@@ -175,7 +175,7 @@ class AvistamientoDetailPage extends StatelessWidget {
           _buildInfoRow(
             Icons.forest,
             'Hábitat',
-            avistamiento.habitad.nombreHabitad,
+            avistamiento.habitat.nombreHabitat,
           ),
           const SizedBox(height: 8),
           _buildInfoRow(

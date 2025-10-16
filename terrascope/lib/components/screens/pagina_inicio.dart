@@ -5,6 +5,7 @@ import '../../components/models/avistamiento_model.dart';
 import '../../config/api_config.dart';
 import '../map/map_page.dart';
 import '../map/avistamiento_detail_loader.dart';
+import '../screens/registro_avistamiento_screen.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -136,9 +137,12 @@ class _HomePageState extends State<HomePage> {
           IconButton(
             icon: const Icon(Icons.camera_alt, color: Color(0xFFE0E0E0)),
             onPressed: () async {
-              // Navegar a pantalla de crear avistamiento
-              
-              // Si se creó un avistamiento, recargar la lista
+              final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const CreateAvistamientoScreen(),
+      ),
+    );
              
             },
           ),
@@ -586,81 +590,3 @@ Align(
     );
   }
 }
-
-  Widget _buildInfoRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 180,
-            child: Text(
-              '$label:',
-              style: const TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 16,
-                color: Colors.black87,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(
-                fontSize: 16,
-                color: Colors.black87,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildComentarioCard(comentario) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      color: Colors.white,
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                CircleAvatar(
-                  backgroundColor: const Color(0xFF5C6445),
-                  radius: 16,
-                  child: Text(
-                    comentario.nombreUsuario[0].toUpperCase(),
-                    style: const TextStyle(
-                      color: Color(0xFFE0E0E0),
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  comentario.nombreUsuario,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                    color: Colors.black87,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              comentario.comentario,
-              style: const TextStyle(
-                fontSize: 14,
-                color: Colors.black87,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
