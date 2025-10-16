@@ -3,11 +3,77 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import '../models/avistamiento_model.dart';
+import '../models/comentario.dart';
+import '../../services/avistamiento_service.dart';
 
-class AvistamientoDetailPage extends StatelessWidget {
+class AvistamientoDetailPage extends StatefulWidget {
   final Avistamiento avistamiento;
+  final String? usuarioId;
+  final String? nombreUsuario;
 
-  const AvistamientoDetailPage({super.key, required this.avistamiento});
+  const AvistamientoDetailPage({
+    super.key,
+    required this.avistamiento,
+    this.usuarioId,
+    this.nombreUsuario,
+  });
+
+  @override
+  State<AvistamientoDetailPage> createState() => _AvistamientoDetailPageState();
+}
+
+class _AvistamientoDetailPageState extends State<AvistamientoDetailPage> {
+  final TextEditingController _comentarioController = TextEditingController();
+  late List<Comentario> _comentarios;
+  bool _isSubmitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _comentarios = List.from(widget.avistamiento.comentarios);
+  }
+
+  Future<void> _agregarComentario() async {
+    if (_comentarioController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Por favor ingresa un comentario')),
+      );
+      return;
+    }
+
+    setState(() => _isSubmitting = true);
+
+    try {
+      await AvistamientoService.addComentario(
+        widget.avistamiento.id,
+        widget.usuarioId ?? '000000000000000000000000',
+        widget.nombreUsuario ?? 'Usuario Anónimo',
+        _comentarioController.text.trim(),
+      );
+
+      setState(() {
+        _comentarios.add(
+          Comentario(
+            idUsuario: widget.usuarioId,
+            nombreUsuario: widget.nombreUsuario ?? 'Usuario Anónimo',
+            comentario: _comentarioController.text.trim(),
+            fecha: DateTime.now(),
+          ),
+        );
+        _comentarioController.clear();
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Comentario agregado exitosamente')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al agregar comentario: $e')),
+      );
+    } finally {
+      setState(() => _isSubmitting = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -34,6 +100,8 @@ class AvistamientoDetailPage extends StatelessWidget {
             _buildLocationSection(),
             _buildDescriptionSection(),
             _buildCommentsSection(context),
+            _buildAddCommentSection(),
+            const SizedBox(height: 20),
           ],
         ),
       ),
@@ -50,7 +118,7 @@ class AvistamientoDetailPage extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: _getEstadoColor(avistamiento.estadoExtincion),
+              color: _getEstadoColor(widget.avistamiento.estadoExtincion),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Row(
@@ -58,7 +126,7 @@ class AvistamientoDetailPage extends StatelessWidget {
                 const Icon(Icons.shield, color: Colors.white, size: 16),
                 const SizedBox(width: 4),
                 Text(
-                  avistamiento.estadoExtincion.toUpperCase(),
+                  widget.avistamiento.estadoExtincion.toUpperCase(),
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -75,17 +143,17 @@ class AvistamientoDetailPage extends StatelessWidget {
 
   Widget _buildMainImage() {
     try {
-      if (avistamiento.imagen.startsWith('http')) {
+      if (widget.avistamiento.imagen.startsWith('http')) {
         return Image.network(
-          avistamiento.imagen,
+          widget.avistamiento.imagen,
           width: double.infinity,
           height: 250,
           fit: BoxFit.cover,
           errorBuilder: (context, error, stackTrace) => _placeholderImage(),
         );
-      } else if (avistamiento.imagen.isNotEmpty) {
+      } else if (widget.avistamiento.imagen.isNotEmpty) {
         return Image.memory(
-          base64Decode(avistamiento.imagen),
+          base64Decode(widget.avistamiento.imagen),
           width: double.infinity,
           height: 250,
           fit: BoxFit.cover,
@@ -111,9 +179,7 @@ class AvistamientoDetailPage extends StatelessWidget {
         ),
       ),
       child: Icon(
-        avistamiento.especie.toLowerCase() == 'flora'
-            ? Icons.local_florist
-            : Icons.pets,
+        _getIconForEspecie(widget.avistamiento.especie),
         size: 80,
         color: Colors.white.withOpacity(0.5),
       ),
@@ -134,7 +200,7 @@ class AvistamientoDetailPage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      avistamiento.nombreComun,
+                      widget.avistamiento.nombreComun,
                       style: const TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
@@ -143,7 +209,7 @@ class AvistamientoDetailPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      avistamiento.nombreCientifico,
+                      widget.avistamiento.nombreCientifico,
                       style: TextStyle(
                         fontSize: 16,
                         fontStyle: FontStyle.italic,
@@ -160,9 +226,7 @@ class AvistamientoDetailPage extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
-                  avistamiento.especie.toLowerCase() == 'flora'
-                      ? Icons.local_florist
-                      : Icons.pets,
+                  _getIconForEspecie(widget.avistamiento.especie),
                   size: 32,
                   color: const Color(0xFF5C6445),
                 ),
@@ -170,18 +234,19 @@ class AvistamientoDetailPage extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          _buildInfoRow(Icons.category, 'Categoría', avistamiento.especie),
+          _buildInfoRow(Icons.category, 'Especie', widget.avistamiento.especie),
           const SizedBox(height: 8),
           _buildInfoRow(
             Icons.forest,
             'Hábitat',
             avistamiento.habitat.nombreHabitat,
+            widget.avistamiento.habitad.nombreHabitad,
           ),
           const SizedBox(height: 8),
           _buildInfoRow(
             Icons.visibility,
             'Estado Espécimen',
-            avistamiento.estadoEspecimen,
+            widget.avistamiento.estadoEspecimen,
           ),
         ],
       ),
@@ -241,7 +306,7 @@ class AvistamientoDetailPage extends StatelessWidget {
                       style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                     ),
                     Text(
-                      avistamiento.ubicacion.latitud.toStringAsFixed(6),
+                      widget.avistamiento.ubicacion.latitud.toStringAsFixed(6),
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
@@ -253,7 +318,7 @@ class AvistamientoDetailPage extends StatelessWidget {
                       style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                     ),
                     Text(
-                      avistamiento.ubicacion.longitud.toStringAsFixed(6),
+                      widget.avistamiento.ubicacion.longitud.toStringAsFixed(6),
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
@@ -273,8 +338,8 @@ class AvistamientoDetailPage extends StatelessWidget {
                   child: FlutterMap(
                     options: MapOptions(
                       initialCenter: LatLng(
-                        avistamiento.ubicacion.latitud,
-                        avistamiento.ubicacion.longitud,
+                        widget.avistamiento.ubicacion.latitud,
+                        widget.avistamiento.ubicacion.longitud,
                       ),
                       initialZoom: 14.0,
                       interactionOptions: const InteractionOptions(
@@ -290,8 +355,8 @@ class AvistamientoDetailPage extends StatelessWidget {
                         markers: [
                           Marker(
                             point: LatLng(
-                              avistamiento.ubicacion.latitud,
-                              avistamiento.ubicacion.longitud,
+                              widget.avistamiento.ubicacion.latitud,
+                              widget.avistamiento.ubicacion.longitud,
                             ),
                             width: 40,
                             height: 40,
@@ -352,7 +417,7 @@ class AvistamientoDetailPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  avistamiento.descripcion,
+                  widget.avistamiento.descripcion,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 14,
@@ -370,7 +435,7 @@ class AvistamientoDetailPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  avistamiento.comportamiento,
+                  widget.avistamiento.comportamiento,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 14,
@@ -402,7 +467,7 @@ class AvistamientoDetailPage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          if (avistamiento.comentarios.isEmpty)
+          if (_comentarios.isEmpty)
             Center(
               child: Padding(
                 padding: const EdgeInsets.all(20),
@@ -416,7 +481,7 @@ class AvistamientoDetailPage extends StatelessWidget {
               ),
             )
           else
-            ...avistamiento.comentarios.map((comentario) {
+            ..._comentarios.map((comentario) {
               return Container(
                 margin: const EdgeInsets.only(bottom: 12),
                 padding: const EdgeInsets.all(16),
@@ -479,6 +544,118 @@ class AvistamientoDetailPage extends StatelessWidget {
     );
   }
 
+  Widget _buildAddCommentSection() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      color: Colors.white,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Text(
+                'AGREGAR COMENTARIO',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF0F1D33),
+                  letterSpacing: 1.2,
+                ),
+              ),
+              const SizedBox(width: 8),
+              if (widget.nombreUsuario != null)
+                Expanded(
+                  child: Text(
+                    'como ${widget.nombreUsuario}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                      fontStyle: FontStyle.italic,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _comentarioController,
+            maxLines: 4,
+            decoration: InputDecoration(
+              hintText: 'Escribe tu comentario aquí...',
+              filled: true,
+              fillColor: const Color(0xFFF5F5F5),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey[300]!),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(
+                  color: Color(0xFF5C6445),
+                  width: 2,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _isSubmitting ? null : _agregarComentario,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF5C6445),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: _isSubmitting
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : const Text(
+                      'Publicar Comentario',
+                      style: TextStyle(
+                        color: Color(0xFFE0E0E0),
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  IconData _getIconForEspecie(String especie) {
+    switch (especie.toLowerCase()) {
+      case 'mamífero':
+      case 'mamifero':
+        return Icons.pets;
+      case 'ave':
+        return Icons.flutter_dash;
+      case 'reptil':
+        return Icons.workspaces_outline;
+      case 'anfibio':
+        return Icons.water;
+      case 'pez':
+        return Icons.phishing;
+      case 'insecto':
+        return Icons.bug_report;
+      case 'planta':
+        return Icons.local_florist;
+      default:
+        return Icons.category;
+    }
+  }
+
   String _formatDate(DateTime date) {
     final months = [
       'Ene',
@@ -508,5 +685,11 @@ class AvistamientoDetailPage extends StatelessWidget {
       default:
         return Colors.grey;
     }
+  }
+
+  @override
+  void dispose() {
+    _comentarioController.dispose();
+    super.dispose();
   }
 }

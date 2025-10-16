@@ -4,7 +4,6 @@ import 'components/auth/register_page.dart';
 import 'components/auth/login_page.dart';
 import 'components/map/map_page.dart';
 
-
 void main() {
   runApp(const MyApp());
 }
@@ -26,14 +25,23 @@ class MyApp extends StatelessWidget {
         '/login': (context) => const LoginPage(),
         '/register': (context) => const RegisterPage(),
         '/map': (context) => const MapPage(),
-        '/home':(context) => const HomePage(),
+        '/home': (context) => const HomePage(),
       },
 
       //Aquí se usa onGenerateRoute para pasar los datos dinámicos
       onGenerateRoute: (settings) {
-        if (settings.name == '/home') {
-     
+        if (settings.name == '/home') {}
+
+        if (settings.name == '/map') {
+          final args = settings.arguments as Map<String, dynamic>?;
+          return MaterialPageRoute(
+            builder: (context) => MapPage(
+              usuarioId: args?['id_usuario'],
+              nombreUsuario: args?['nombre_usuario'],
+            ),
+          );
         }
+
         return null;
       },
     );

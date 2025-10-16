@@ -43,11 +43,11 @@ class _HomePageState extends State<HomePage> {
         _isLoading = true;
         _error = null;
       });
-      
+
       print('🔍 Intentando cargar avistamientos...');
       final avistamientos = await _service.getAllFaunaFlora();
       print('✅ Avistamientos cargados: ${avistamientos.length}');
-      
+
       // Debuggear el primer avistamiento
       if (avistamientos.isNotEmpty) {
         final first = avistamientos[0];
@@ -56,7 +56,7 @@ class _HomePageState extends State<HomePage> {
         print('  - tipo: ${first.tipo}');
         print('  - nombre_usuario: ${first.nombreUsuario}');
       }
-      
+
       if (mounted) {
         setState(() {
           _avistamientos = avistamientos;
@@ -68,7 +68,7 @@ class _HomePageState extends State<HomePage> {
       print('❌ Error completo: $e');
       print('📍 Stack trace completo:');
       print(stackTrace);
-      
+
       if (mounted) {
         setState(() {
           _error = 'Error: ${e.toString()}';
@@ -78,10 +78,9 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
- void _applyFilter(String? tipo) {
+  void _applyFilter(String? tipo) {
     setState(() {
       _filtroTipo = tipo;
-      
     });
     _filtrarAvistamientos();
   }
@@ -91,25 +90,27 @@ class _HomePageState extends State<HomePage> {
 
     // Filtrar por tipo (Fauna o Flora)
     if (_filtroTipo != null) {
-      filtrados = filtrados.where((a) => 
-        a.tipo.toLowerCase() == _filtroTipo!.toLowerCase()
-      ).toList();
+      filtrados = filtrados
+          .where((a) => a.tipo.toLowerCase() == _filtroTipo!.toLowerCase())
+          .toList();
     }
 
     // Filtrar por búsqueda
     if (_searchController.text.isNotEmpty) {
       final query = _searchController.text.toLowerCase();
-      filtrados = filtrados.where((a) =>
-        a.nombreComun.toLowerCase().contains(query) ||
-        a.nombreCientifico.toLowerCase().contains(query)
-      ).toList();
+      filtrados = filtrados
+          .where(
+            (a) =>
+                a.nombreComun.toLowerCase().contains(query) ||
+                a.nombreCientifico.toLowerCase().contains(query),
+          )
+          .toList();
     }
 
     setState(() {
       _avistamientosFiltrados = filtrados;
     });
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -144,6 +145,9 @@ class _HomePageState extends State<HomePage> {
       ),
     );
              
+              // Navegar a pantalla de crear avistamiento
+
+              // Si se creó un avistamiento, recargar la lista
             },
           ),
           IconButton(
@@ -154,125 +158,116 @@ class _HomePageState extends State<HomePage> {
       ),
       body: _isLoading
           ? const Center(
-              child: CircularProgressIndicator(
-                color: Color(0xFFE0E0E0),
-              ),
+              child: CircularProgressIndicator(color: Color(0xFFE0E0E0)),
             )
           : _error != null
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.error_outline,
-                          size: 64,
-                          color: Colors.grey[400],
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          _error!,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            color: Color(0xFFE0E0E0),
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        ElevatedButton.icon(
-                          onPressed: _cargarAvistamientos,
-                          icon: const Icon(Icons.refresh),
-                          label: const Text('Reintentar'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF939E69),
-                            foregroundColor: Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                )
-              : Column(
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    _buildSearchAndFilters(),
-                    Expanded(
-                      child: _avistamientosFiltrados.isEmpty
-                          ? Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.pets_outlined,
-                                    size: 80,
-                                    color: Colors.grey[400],
-                                  ),
-                                  const SizedBox(height: 16),
-                                  Text(
-                                    'No hay avistamientos',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      color: Colors.grey[400],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            )
-                          : RefreshIndicator(
-                              onRefresh: _cargarAvistamientos,
-                              color: const Color(0xFF5C6445),
-                              child: ListView.builder(
-                                itemCount: _avistamientosFiltrados.length,
-                                padding: const EdgeInsets.only(bottom: 16),
-                                itemBuilder: (context, index) {
-                                  return AvistamientoCard(
-                                    data: _avistamientosFiltrados[index],
-                                    onTap: () {
-                                     
-                                    },
-                                    service: _service ,
-                                  );
-                                },
-                              ),
-                            ),
+                    Icon(
+                      Icons.error_outline,
+                      size: 64,
+                      color: Colors.grey[400],
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      _error!,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        color: Color(0xFFE0E0E0),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    ElevatedButton.icon(
+                      onPressed: _cargarAvistamientos,
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Reintentar'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF939E69),
+                        foregroundColor: Colors.white,
+                      ),
                     ),
                   ],
                 ),
-     bottomNavigationBar: BottomNavigationBar(
-  backgroundColor: const Color(0xFFE0E0E0),
-  selectedItemColor: const Color(0xFF5C6445),
-  unselectedItemColor: Colors.grey,
-  currentIndex: _currentIndex,
-  onTap: (index) {
-    setState(() {
-      _currentIndex = index;
-    });
-    
-    if (index == 1) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const MapPage(),
-        ),
-      );
-      // Vuelve al índice 0 después de navegar
-      Future.delayed(const Duration(milliseconds: 500), () {
-        setState(() {
-          _currentIndex = 0;
-        });
-      });
-    }
-  },
-  items: const [
-    BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
-    BottomNavigationBarItem(icon: Icon(Icons.map), label: ''),
-  ],
-),
+              ),
+            )
+          : Column(
+              children: [
+                _buildSearchAndFilters(),
+                Expanded(
+                  child: _avistamientosFiltrados.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.pets_outlined,
+                                size: 80,
+                                color: Colors.grey[400],
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'No hay avistamientos',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  color: Colors.grey[400],
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : RefreshIndicator(
+                          onRefresh: _cargarAvistamientos,
+                          color: const Color(0xFF5C6445),
+                          child: ListView.builder(
+                            itemCount: _avistamientosFiltrados.length,
+                            padding: const EdgeInsets.only(bottom: 16),
+                            itemBuilder: (context, index) {
+                              return AvistamientoCard(
+                                data: _avistamientosFiltrados[index],
+                                onTap: () {},
+                                service: _service,
+                              );
+                            },
+                          ),
+                        ),
+                ),
+              ],
+            ),
+      bottomNavigationBar: BottomNavigationBar(
+        backgroundColor: const Color(0xFFE0E0E0),
+        selectedItemColor: const Color(0xFF5C6445),
+        unselectedItemColor: Colors.grey,
+        currentIndex: _currentIndex,
+        onTap: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+
+          if (index == 1) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const MapPage()),
+            );
+            // Vuelve al índice 0 después de navegar
+            Future.delayed(const Duration(milliseconds: 500), () {
+              setState(() {
+                _currentIndex = 0;
+              });
+            });
+          }
+        },
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
+          BottomNavigationBarItem(icon: Icon(Icons.map), label: ''),
+        ],
+      ),
     );
   }
-  
-  
-
 
   Widget _buildSearchAndFilters() {
     return Container(
@@ -336,7 +331,7 @@ class AvistamientoCard extends StatelessWidget {
     super.key,
     required this.data,
     required this.onTap,
-    required this.service, 
+    required this.service,
   });
 
   // Obtener icono según estado de extinción
@@ -344,9 +339,11 @@ class AvistamientoCard extends StatelessWidget {
     final estadoLower = estado.toLowerCase();
     if (estadoLower.contains('peligro') || estadoLower.contains('crítico')) {
       return Icons.warning;
-    } else if (estadoLower.contains('vulnerable') || estadoLower.contains('amenazado')) {
+    } else if (estadoLower.contains('vulnerable') ||
+        estadoLower.contains('amenazado')) {
       return Icons.error_outline;
-    } else if (estadoLower.contains('preocupación') || estadoLower.contains('menor')) {
+    } else if (estadoLower.contains('preocupación') ||
+        estadoLower.contains('menor')) {
       return Icons.info_outline;
     }
     return Icons.check_circle_outline;
@@ -357,9 +354,11 @@ class AvistamientoCard extends StatelessWidget {
     final estadoLower = estado.toLowerCase();
     if (estadoLower.contains('peligro') || estadoLower.contains('crítico')) {
       return Colors.red;
-    } else if (estadoLower.contains('vulnerable') || estadoLower.contains('amenazado')) {
+    } else if (estadoLower.contains('vulnerable') ||
+        estadoLower.contains('amenazado')) {
       return Colors.orange;
-    } else if (estadoLower.contains('preocupación') || estadoLower.contains('menor')) {
+    } else if (estadoLower.contains('preocupación') ||
+        estadoLower.contains('menor')) {
       return Colors.amber;
     }
     return Colors.green;
@@ -412,7 +411,7 @@ class AvistamientoCard extends StatelessWidget {
               ],
             ),
           ),
-          
+
           // Imagen del avistamiento
           GestureDetector(
             onTap: onTap,
@@ -431,7 +430,7 @@ class AvistamientoCard extends StatelessWidget {
                   : _buildPlaceholder(),
             ),
           ),
-          
+
           // Información del avistamiento
           Padding(
             padding: const EdgeInsets.all(16.0),
@@ -457,17 +456,17 @@ class AvistamientoCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 12),
-                
+
                 // Especie
                 Row(
                   children: [
-                 Icon(
-                     data.tipo.toLowerCase() == 'Flora' 
-                      ? Icons.local_florist 
-                      : Icons.pets,
-                    size: 18,
-                    color: const Color(0xFF5C6445),
-                  ),
+                    Icon(
+                      data.tipo.toLowerCase() == 'Flora'
+                          ? Icons.local_florist
+                          : Icons.pets,
+                      size: 18,
+                      color: const Color(0xFF5C6445),
+                    ),
                     const SizedBox(width: 6),
                     Text(
                       data.especie,
@@ -480,7 +479,7 @@ class AvistamientoCard extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 8),
-                
+
                 // Estado de extinción
                 Row(
                   children: [
@@ -501,7 +500,7 @@ class AvistamientoCard extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 8),
-                
+
                 // Estado del especimen
                 Row(
                   children: [
@@ -513,44 +512,41 @@ class AvistamientoCard extends StatelessWidget {
                     const SizedBox(width: 6),
                     Text(
                       'Estado: ${data.estadoEspecimen}',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[700],
-                      ),
+                      style: TextStyle(fontSize: 14, color: Colors.grey[700]),
                     ),
                   ],
                 ),
                 const SizedBox(height: 16),
-                
-               // Botón ver detalle - REEMPLAZA ESTO
-Align(
-  alignment: Alignment.centerRight,
-  child: ElevatedButton(
-    onPressed: () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => AvistamientoDetailLoader(
-            avistamientoId: data.id,
-            service: service,
-          ),
-        ),
-      );
-    },
-    style: ElevatedButton.styleFrom(
-      backgroundColor: const Color(0xFF5C6445),
-      foregroundColor: const Color(0xFFE0E0E0),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
-      padding: const EdgeInsets.symmetric(
-        horizontal: 24,
-        vertical: 10,
-      ),
-    ),
-    child: const Text('Ver a detalle'),
-  ),
-)
+
+                // Botón ver detalle - REEMPLAZA ESTO
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => AvistamientoDetailLoader(
+                            avistamientoId: data.id,
+                            service: service,
+                          ),
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF5C6445),
+                      foregroundColor: const Color(0xFFE0E0E0),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 10,
+                      ),
+                    ),
+                    child: const Text('Ver a detalle'),
+                  ),
+                ),
               ],
             ),
           ),
@@ -563,30 +559,90 @@ Align(
     return Stack(
       alignment: Alignment.center,
       children: [
-        Icon(
-          Icons.image_outlined,
-          size: 80,
-          color: Colors.grey[400],
-        ),
+        Icon(Icons.image_outlined, size: 80, color: Colors.grey[400]),
         Positioned(
           bottom: 60,
           right: 80,
-          child: Icon(
-            Icons.pets,
-            size: 50,
-            color: Colors.grey[300],
-          ),
+          child: Icon(Icons.pets, size: 50, color: Colors.grey[300]),
         ),
         Positioned(
           top: 80,
           left: 100,
-          child: Icon(
-            Icons.nature,
-            size: 40,
-            color: Colors.grey[300],
-          ),
+          child: Icon(Icons.nature, size: 40, color: Colors.grey[300]),
         ),
       ],
     );
   }
+}
+
+Widget _buildInfoRow(String label, String value) {
+  return Padding(
+    padding: const EdgeInsets.only(bottom: 8.0),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 180,
+          child: Text(
+            '$label:',
+            style: const TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 16,
+              color: Colors.black87,
+            ),
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: const TextStyle(fontSize: 16, color: Colors.black87),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+Widget _buildComentarioCard(comentario) {
+  return Card(
+    margin: const EdgeInsets.only(bottom: 12),
+    color: Colors.white,
+    child: Padding(
+      padding: const EdgeInsets.all(12.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                backgroundColor: const Color(0xFF5C6445),
+                radius: 16,
+                child: Text(
+                  comentario.nombreUsuario[0].toUpperCase(),
+                  style: const TextStyle(
+                    color: Color(0xFFE0E0E0),
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                comentario.nombreUsuario,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                  color: Colors.black87,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            comentario.comentario,
+            style: const TextStyle(fontSize: 14, color: Colors.black87),
+          ),
+        ],
+      ),
+    ),
+  );
 }

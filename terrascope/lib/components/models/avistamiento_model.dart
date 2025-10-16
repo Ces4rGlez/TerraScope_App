@@ -1,4 +1,5 @@
 import 'habitat.dart';
+import '../models/comentario.dart';
 
 class Avistamiento {
   final String id;
@@ -54,6 +55,27 @@ class Avistamiento {
         [],
   );
 }
+    return Avistamiento(
+      id: json['_id'] ?? '',
+      nombreComun: json['nombre_comun'] ?? '',
+      nombreCientifico: json['nombre_cientifico'] ?? '',
+      especie: json['especie'] ?? '',
+      descripcion: json['descripcion'] ?? '',
+      imagen: json['imagen'] ?? '',
+      tipo: json['tipo'] ?? '',
+      nombreUsuario: json['nombre_usuario'] ?? '',
+      ubicacion: Ubicacion.fromJson(json['ubicacion'] ?? {}),
+      comportamiento: json['comportamiento'] ?? '',
+      estadoExtincion: json['estado_extincion'] ?? '',
+      estadoEspecimen: json['estado_especimen'] ?? '',
+      habitad: Habitad.fromJson(json['habitad'] ?? {}),
+      comentarios:
+          (json['comentarios'] as List?)
+              ?.map((c) => Comentario.fromJson(c))
+              .toList() ??
+          [],
+    );
+  }
 
   Map<String, dynamic> toJson() {
     return {
@@ -84,10 +106,7 @@ class Ubicacion {
   final double latitud;
   final double longitud;
 
-  Ubicacion({
-    required this.latitud,
-    required this.longitud,
-  });
+  Ubicacion({required this.latitud, required this.longitud});
 
   factory Ubicacion.fromJson(Map<String, dynamic> json) {
     return Ubicacion(
@@ -97,52 +116,13 @@ class Ubicacion {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'latitud': latitud,
-      'longitud': longitud,
-    };
+    return {'latitud': latitud, 'longitud': longitud};
   }
 
   @override
   String toString() => 'Ubicacion(lat: $latitud, lng: $longitud)';
 }
 
-
-class Comentario {
-  final String idUsuario;
-  final String nombreUsuario;
-  final String comentario;
-  final DateTime fecha;
-
-  Comentario({
-    required this.idUsuario,
-    required this.nombreUsuario,
-    required this.comentario,
-    required this.fecha,
-  });
-
-  factory Comentario.fromJson(Map<String, dynamic> json) {
-    return Comentario(
-      idUsuario: json['id_usuario'] ?? '',
-      nombreUsuario: json['nombre_usuario'] ?? '',
-      comentario: json['comentario'] ?? '',
-      fecha: DateTime.parse(
-          json['fecha'] ?? DateTime.now().toIso8601String()),
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'id_usuario': idUsuario,
-      'nombre_usuario': nombreUsuario,
-      'comentario': comentario,
-      'fecha': fecha.toIso8601String(),
-    };
-  }
-
-  @override
-  String toString() => 'Comentario($nombreUsuario: $comentario)';
-}
 
 class ZonaFrecuente {
   final double lat;
@@ -167,12 +147,7 @@ class ZonaFrecuente {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'lat': lat,
-      'lng': lng,
-      'especie': especie,
-      'count': count,
-    };
+    return {'lat': lat, 'lng': lng, 'especie': especie, 'count': count};
   }
 
   @override

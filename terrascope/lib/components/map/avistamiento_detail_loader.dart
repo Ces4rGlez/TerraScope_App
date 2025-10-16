@@ -24,8 +24,9 @@ class _AvistamientoDetailLoaderState extends State<AvistamientoDetailLoader> {
   @override
   void initState() {
     super.initState();
-    _avistamientoFuture =
-        widget.service.getFaunaFloraById(widget.avistamientoId);
+    _avistamientoFuture = widget.service.getFaunaFloraById(
+      widget.avistamientoId,
+    );
   }
 
   @override
@@ -35,9 +36,7 @@ class _AvistamientoDetailLoaderState extends State<AvistamientoDetailLoader> {
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Scaffold(
-            body: const Center(
-              child: CircularProgressIndicator(),
-            ),
+            body: const Center(child: CircularProgressIndicator()),
           );
         }
 
@@ -54,11 +53,7 @@ class _AvistamientoDetailLoaderState extends State<AvistamientoDetailLoader> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(
-                    Icons.error_outline,
-                    size: 64,
-                    color: Colors.red,
-                  ),
+                  const Icon(Icons.error_outline, size: 64, color: Colors.red),
                   const SizedBox(height: 16),
                   Text('Error: ${snapshot.error}'),
                   const SizedBox(height: 24),
@@ -81,18 +76,14 @@ class _AvistamientoDetailLoaderState extends State<AvistamientoDetailLoader> {
                 onPressed: () => Navigator.pop(context),
               ),
             ),
-            body: const Center(
-              child: Text('Avistamiento no encontrado'),
-            ),
+            body: const Center(child: Text('Avistamiento no encontrado')),
           );
         }
 
         final avistamiento = snapshot.data!;
 
         // Una vez cargado, mostrar la pantalla de detalle de tu compañero
-        return AvistamientoDetailPage(
-  avistamiento: avistamiento,
-);
+        return AvistamientoDetailPage(avistamiento: avistamiento);
       },
     );
   }
