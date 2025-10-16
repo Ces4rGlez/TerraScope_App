@@ -35,26 +35,6 @@ class Avistamiento {
   });
 
   factory Avistamiento.fromJson(Map<String, dynamic> json) {
-  return Avistamiento(
-    id: json['_id'] ?? '',
-    nombreComun: json['nombre_comun'] ?? '',
-    nombreCientifico: json['nombre_cientifico'] ?? '',
-    especie: json['especie'] ?? '',
-    descripcion: json['descripcion'] ?? '',
-    imagen: json['imagen'] ?? '',
-    tipo: json['tipo'] ?? '',
-    nombreUsuario: json['nombre_usuario'] ?? '',
-    ubicacion: Ubicacion.fromJson(json['ubicacion'] ?? {}),
-    comportamiento: json['comportamiento'] ?? '',
-    estadoExtincion: json['estado_extincion'] ?? '',
-    estadoEspecimen: json['estado_especimen'] ?? '',
-    habitat: Habitat.fromJson(json['habitat'] ?? {}),  // ← Maneja habitat null
-    comentarios: (json['comentarios'] as List?)
-            ?.map((c) => Comentario.fromJson(c))
-            .toList() ??
-        [],
-  );
-}
     return Avistamiento(
       id: json['_id'] ?? '',
       nombreComun: json['nombre_comun'] ?? '',
@@ -68,9 +48,8 @@ class Avistamiento {
       comportamiento: json['comportamiento'] ?? '',
       estadoExtincion: json['estado_extincion'] ?? '',
       estadoEspecimen: json['estado_especimen'] ?? '',
-      habitad: Habitad.fromJson(json['habitad'] ?? {}),
-      comentarios:
-          (json['comentarios'] as List?)
+      habitat: Habitat.fromJson(json['habitat'] ?? {}), // 👈 corregido
+      comentarios: (json['comentarios'] as List?)
               ?.map((c) => Comentario.fromJson(c))
               .toList() ??
           [],
@@ -122,7 +101,6 @@ class Ubicacion {
   @override
   String toString() => 'Ubicacion(lat: $latitud, lng: $longitud)';
 }
-
 
 class ZonaFrecuente {
   final double lat;

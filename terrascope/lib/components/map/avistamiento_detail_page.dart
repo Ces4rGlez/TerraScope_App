@@ -239,8 +239,7 @@ class _AvistamientoDetailPageState extends State<AvistamientoDetailPage> {
           _buildInfoRow(
             Icons.forest,
             'Hábitat',
-            avistamiento.habitat.nombreHabitat,
-            widget.avistamiento.habitad.nombreHabitad,
+            widget.avistamiento.habitat.nombreHabitat,
           ),
           const SizedBox(height: 8),
           _buildInfoRow(

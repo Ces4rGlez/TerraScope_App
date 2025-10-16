@@ -193,7 +193,7 @@ class _MapPageState extends State<MapPage> {
 
       for (var avistamiento in _filteredAvistamientos) {
         csvContent.writeln(
-          '${avistamiento.nombreComun},${avistamiento.nombreCientifico},${avistamiento.especie},${avistamiento.descripcion},${avistamiento.ubicacion.latitud},${avistamiento.ubicacion.longitud},${avistamiento.estadoExtincion},${avistamiento.habitad.nombreHabitad}',
+          '${avistamiento.nombreComun},${avistamiento.nombreCientifico},${avistamiento.especie},${avistamiento.descripcion},${avistamiento.ubicacion.latitud},${avistamiento.ubicacion.longitud},${avistamiento.estadoExtincion},${avistamiento.habitat.nombreHabitat}',
         );
       }
 
