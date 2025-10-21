@@ -139,12 +139,12 @@ class _HomePageState extends State<HomePage> {
             icon: const Icon(Icons.camera_alt, color: Color(0xFFE0E0E0)),
             onPressed: () async {
               final result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const CreateAvistamientoScreen(),
-      ),
-    );
-             
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const CreateAvistamientoScreen(),
+                ),
+              );
+
               // Navegar a pantalla de crear avistamiento
 
               // Si se creó un avistamiento, recargar la lista

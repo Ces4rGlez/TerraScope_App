@@ -49,7 +49,8 @@ class Avistamiento {
       estadoExtincion: json['estado_extincion'] ?? '',
       estadoEspecimen: json['estado_especimen'] ?? '',
       habitat: Habitat.fromJson(json['habitat'] ?? {}), // 👈 corregido
-      comentarios: (json['comentarios'] as List?)
+      comentarios:
+          (json['comentarios'] as List?)
               ?.map((c) => Comentario.fromJson(c))
               .toList() ??
           [],

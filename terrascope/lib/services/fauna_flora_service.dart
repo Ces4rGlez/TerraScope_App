@@ -12,9 +12,7 @@ class FaunaFloraService {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/fauna-flora'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: {'Content-Type': 'application/json'},
         body: json.encode(data.toJson()),
       );
 
@@ -37,9 +35,7 @@ class FaunaFloraService {
     try {
       final response = await http.get(
         Uri.parse('$baseUrl/fauna-flora'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: {'Content-Type': 'application/json'},
       );
 
       if (response.statusCode == 200) {
@@ -59,7 +55,9 @@ class FaunaFloraService {
             .map((json) => Avistamiento.fromJson(json as Map<String, dynamic>))
             .toList();
       } else {
-        throw Exception('Error al obtener avistamientos: ${response.statusCode}');
+        throw Exception(
+          'Error al obtener avistamientos: ${response.statusCode}',
+        );
       }
     } catch (e) {
       print('❌ Error en getAllFaunaFlora: $e');
@@ -72,9 +70,7 @@ class FaunaFloraService {
     try {
       final response = await http.get(
         Uri.parse('$baseUrl/fauna-flora/$id'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: {'Content-Type': 'application/json'},
       );
 
       if (response.statusCode == 200) {
@@ -88,7 +84,9 @@ class FaunaFloraService {
       } else if (response.statusCode == 404) {
         return null;
       } else {
-        throw Exception('Error al obtener avistamiento: ${response.statusCode}');
+        throw Exception(
+          'Error al obtener avistamiento: ${response.statusCode}',
+        );
       }
     } catch (e) {
       rethrow;
@@ -104,9 +102,7 @@ class FaunaFloraService {
     try {
       final response = await http.get(
         Uri.parse('$baseUrl/fauna-flora/cerca/$latitud/$longitud/$distanciaKm'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: {'Content-Type': 'application/json'},
       );
 
       if (response.statusCode == 200) {
@@ -126,7 +122,8 @@ class FaunaFloraService {
             .toList();
       } else {
         throw Exception(
-            'Error al buscar avistamientos cercanos: ${response.statusCode}');
+          'Error al buscar avistamientos cercanos: ${response.statusCode}',
+        );
       }
     } catch (e) {
       rethrow;
@@ -143,9 +140,7 @@ class FaunaFloraService {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/fauna-flora/$avistamientoId/comentarios'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'id_usuario': idUsuario,
           'nombre_usuario': nombreUsuario,
@@ -172,9 +167,7 @@ class FaunaFloraService {
     try {
       final response = await http.put(
         Uri.parse('$baseUrl/fauna-flora/$id'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: {'Content-Type': 'application/json'},
         body: json.encode(updates),
       );
 
@@ -185,7 +178,9 @@ class FaunaFloraService {
             : responseData;
         return Avistamiento.fromJson(jsonData as Map<String, dynamic>);
       } else {
-        throw Exception('Error al actualizar avistamiento: ${response.statusCode}');
+        throw Exception(
+          'Error al actualizar avistamiento: ${response.statusCode}',
+        );
       }
     } catch (e) {
       rethrow;
@@ -197,15 +192,15 @@ class FaunaFloraService {
     try {
       final response = await http.delete(
         Uri.parse('$baseUrl/fauna-flora/$id'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: {'Content-Type': 'application/json'},
       );
 
       if (response.statusCode == 200) {
         return true;
       } else {
-        throw Exception('Error al eliminar avistamiento: ${response.statusCode}');
+        throw Exception(
+          'Error al eliminar avistamiento: ${response.statusCode}',
+        );
       }
     } catch (e) {
       rethrow;
@@ -217,9 +212,7 @@ class FaunaFloraService {
     try {
       final response = await http.get(
         Uri.parse('$baseUrl/fauna-flora/especie/$especie'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: {'Content-Type': 'application/json'},
       );
 
       if (response.statusCode == 200) {
@@ -239,7 +232,8 @@ class FaunaFloraService {
             .toList();
       } else {
         throw Exception(
-            'Error al obtener avistamientos por especie: ${response.statusCode}');
+          'Error al obtener avistamientos por especie: ${response.statusCode}',
+        );
       }
     } catch (e) {
       rethrow;
@@ -247,13 +241,13 @@ class FaunaFloraService {
   }
 
   /// Obtener avistamientos por usuario
-  Future<List<Avistamiento>> getFaunaFloraByUsuario(String nombreUsuario) async {
+  Future<List<Avistamiento>> getFaunaFloraByUsuario(
+    String nombreUsuario,
+  ) async {
     try {
       final response = await http.get(
         Uri.parse('$baseUrl/fauna-flora/usuario/$nombreUsuario'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: {'Content-Type': 'application/json'},
       );
 
       if (response.statusCode == 200) {
@@ -273,7 +267,8 @@ class FaunaFloraService {
             .toList();
       } else {
         throw Exception(
-            'Error al obtener avistamientos del usuario: ${response.statusCode}');
+          'Error al obtener avistamientos del usuario: ${response.statusCode}',
+        );
       }
     } catch (e) {
       rethrow;

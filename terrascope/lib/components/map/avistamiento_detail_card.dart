@@ -91,6 +91,21 @@ class AvistamientoDetailCard extends StatelessWidget {
                               ),
                             ],
                           ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.person,
+                                size: 16,
+                                color: Color(0xFF5C6445),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Subido por: ${avistamiento.nombreUsuario}',
+                                style: const TextStyle(fontSize: 12),
+                              ),
+                            ],
+                          ),
                         ],
                       ),
                     ),

@@ -5,6 +5,7 @@ import 'package:latlong2/latlong.dart';
 import '../models/avistamiento_model.dart';
 import '../models/comentario.dart';
 import '../../services/avistamiento_service.dart';
+import '../../services/session_service.dart';
 
 class AvistamientoDetailPage extends StatefulWidget {
   final Avistamiento avistamiento;
@@ -26,6 +27,7 @@ class _AvistamientoDetailPageState extends State<AvistamientoDetailPage> {
   final TextEditingController _comentarioController = TextEditingController();
   late List<Comentario> _comentarios;
   bool _isSubmitting = false;
+  final SessionService _sessionService = SessionService();
 
   @override
   void initState() {
@@ -44,10 +46,23 @@ class _AvistamientoDetailPageState extends State<AvistamientoDetailPage> {
     setState(() => _isSubmitting = true);
 
     try {
+      // Obtener el nombre del usuario de la sesión
+      final nombreUsuario = await _sessionService.getUserName();
+
+      if (nombreUsuario == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No hay sesión activa. Por favor inicia sesión.'),
+          ),
+        );
+        setState(() => _isSubmitting = false);
+        return;
+      }
+
       await AvistamientoService.addComentario(
         widget.avistamiento.id,
         widget.usuarioId ?? '000000000000000000000000',
-        widget.nombreUsuario ?? 'Usuario Anónimo',
+        nombreUsuario,
         _comentarioController.text.trim(),
       );
 
@@ -55,7 +70,7 @@ class _AvistamientoDetailPageState extends State<AvistamientoDetailPage> {
         _comentarios.add(
           Comentario(
             idUsuario: widget.usuarioId,
-            nombreUsuario: widget.nombreUsuario ?? 'Usuario Anónimo',
+            nombreUsuario: nombreUsuario,
             comentario: _comentarioController.text.trim(),
             fecha: DateTime.now(),
           ),
@@ -143,17 +158,19 @@ class _AvistamientoDetailPageState extends State<AvistamientoDetailPage> {
 
   Widget _buildMainImage() {
     try {
-      if (widget.avistamiento.imagen.startsWith('http')) {
+      if (widget.avistamiento.imagen.isNotEmpty &&
+          widget.avistamiento.imagen[0].startsWith('http')) {
         return Image.network(
-          widget.avistamiento.imagen,
+          widget.avistamiento.imagen[0],
           width: double.infinity,
           height: 250,
           fit: BoxFit.cover,
           errorBuilder: (context, error, stackTrace) => _placeholderImage(),
         );
-      } else if (widget.avistamiento.imagen.isNotEmpty) {
+      } else if (widget.avistamiento.imagen.isNotEmpty &&
+          widget.avistamiento.imagen[0].isNotEmpty) {
         return Image.memory(
-          base64Decode(widget.avistamiento.imagen),
+          base64Decode(widget.avistamiento.imagen[0]),
           width: double.infinity,
           height: 250,
           fit: BoxFit.cover,

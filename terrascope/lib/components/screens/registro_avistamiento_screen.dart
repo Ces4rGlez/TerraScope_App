@@ -21,11 +21,13 @@ class CreateAvistamientoScreen extends StatefulWidget {
 class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
   final _formKey = GlobalKey<FormState>();
   final CameraService _cameraService = CameraService();
-  final FaunaFloraService _service =
-      FaunaFloraService(baseUrl: ApiConfig.baseUrl);
+  final FaunaFloraService _service = FaunaFloraService(
+    baseUrl: ApiConfig.baseUrl,
+  );
   final SessionService _sessionService = SessionService();
-  final HabitatService _habitatService =
-      HabitatService(baseUrl: ApiConfig.baseUrl);
+  final HabitatService _habitatService = HabitatService(
+    baseUrl: ApiConfig.baseUrl,
+  );
 
   // Controladores de texto
   final TextEditingController _nombreComunController = TextEditingController();
@@ -134,7 +136,7 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
 
   Future<void> _getCurrentLocation() async {
     if (!mounted) return;
-    
+
     setState(() {
       _isLoadingLocation = true;
     });
@@ -143,7 +145,9 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
       // Verificar si los servicios de ubicación están habilitados
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
-        throw Exception('Los servicios de ubicación están deshabilitados. Por favor actívalos en configuración.');
+        throw Exception(
+          'Los servicios de ubicación están deshabilitados. Por favor actívalos en configuración.',
+        );
       }
 
       // Verificar permisos
@@ -156,20 +160,24 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
       }
 
       if (permission == LocationPermission.deniedForever) {
-        throw Exception('Los permisos de ubicación están denegados permanentemente. Ve a configuración para habilitarlos.');
+        throw Exception(
+          'Los permisos de ubicación están denegados permanentemente. Ve a configuración para habilitarlos.',
+        );
       }
 
       // Intentar obtener última ubicación conocida (más rápido)
       Position? lastPosition = await Geolocator.getLastKnownPosition();
-      
+
       if (lastPosition != null) {
         if (mounted) {
           setState(() {
             _latitudController.text = lastPosition.latitude.toStringAsFixed(6);
-            _longitudController.text = lastPosition.longitude.toStringAsFixed(6);
+            _longitudController.text = lastPosition.longitude.toStringAsFixed(
+              6,
+            );
             _isLoadingLocation = false;
           });
-          
+
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Ubicación obtenida (última conocida)'),
@@ -193,7 +201,7 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
           _longitudController.text = position.longitude.toStringAsFixed(6);
           _isLoadingLocation = false;
         });
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Ubicación obtenida exitosamente'),
@@ -207,7 +215,9 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
         setState(() {
           _isLoadingLocation = false;
         });
-        _showError('Tiempo de espera agotado. Intenta de nuevo en un lugar con mejor señal GPS.');
+        _showError(
+          'Tiempo de espera agotado. Intenta de nuevo en un lugar con mejor señal GPS.',
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -241,7 +251,7 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
     try {
       // Obtener el nombre del usuario de la sesión
       final nombreUsuario = await _sessionService.getUserName();
-      
+
       if (nombreUsuario == null) {
         _showError('No hay sesión activa. Por favor inicia sesión.');
         setState(() {
@@ -338,11 +348,7 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.camera_alt,
-              size: 100,
-              color: Colors.grey[400],
-            ),
+            Icon(Icons.camera_alt, size: 100, color: Colors.grey[400]),
             const SizedBox(height: 24),
             const Text(
               'Captura la imagen del avistamiento',
@@ -356,10 +362,7 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
             const SizedBox(height: 12),
             Text(
               'Toma una foto clara del animal o planta',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[700],
-              ),
+              style: TextStyle(fontSize: 14, color: Colors.grey[700]),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 40),
@@ -594,9 +597,7 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
                 'En peligro',
                 'En peligro crítico',
                 'Extinto',
-              ]
-                  .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-                  .toList(),
+              ].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
               onChanged: (value) {
                 if (value != null) {
                   setState(() {
@@ -724,10 +725,7 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
         children: [
           Text(
             label,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
-            ),
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
           ),
           const SizedBox(height: 8),
           TextFormField(

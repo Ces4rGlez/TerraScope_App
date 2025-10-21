@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:terrascope/services/auth_service.dart';
+import 'package:terrascope/services/session_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -30,15 +31,31 @@ class _LoginPageState extends State<LoginPage> {
     setState(() => isLoading = false);
 
     if (user != null) {
-      Navigator.pushReplacementNamed(
-        context,
-        '/home',
-        arguments: {
-          'id_usuario': user['id_usuario'],
-          'nombre_usuario': user['nombre_usuario'],
-          'email_usuario': user['email_usuario'],
-        },
-      );
+      // Guardar la sesión del usuario
+      final sessionService = SessionService();
+      final sessionSaved = await sessionService.saveSession({
+        'id_usuario': user['id_usuario'],
+        'nombre_usuario': user['nombre_usuario'],
+        'email_usuario': user['email_usuario'],
+      });
+
+      if (sessionSaved) {
+        Navigator.pushReplacementNamed(
+          context,
+          '/home',
+          arguments: {
+            'id_usuario': user['id_usuario'],
+            'nombre_usuario': user['nombre_usuario'],
+            'email_usuario': user['email_usuario'],
+          },
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Error al guardar la sesión. Inténtalo de nuevo."),
+          ),
+        );
+      }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Correo o contraseña incorrectos ❌")),
