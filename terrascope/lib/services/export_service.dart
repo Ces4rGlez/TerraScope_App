@@ -212,22 +212,62 @@ class ExportService {
       pdf.addPage(
         pw.MultiPage(
           pageFormat: PdfPageFormat.a4.landscape,
-          build: (pw.Context context) {
-            return [
-              pw.Header(
-                level: 0,
-                child: pw.Text(
-                  'Avistamientos TerraScope',
-                  style: pw.TextStyle(
-                    fontSize: 24,
-                    fontWeight: pw.FontWeight.bold,
-                  ),
+          header: (pw.Context context) {
+            return pw.Container(
+              alignment: pw.Alignment.center,
+              margin: const pw.EdgeInsets.only(bottom: 20),
+              child: pw.Text(
+                'Avistamientos TerraScope',
+                style: pw.TextStyle(
+                  fontSize: 28,
+                  fontWeight: pw.FontWeight.bold,
+                  color: PdfColors.green700,
                 ),
               ),
-              pw.SizedBox(height: 20),
-              pw.Text(
-                'Total de registros: ${avistamientos.length}',
-                style: const pw.TextStyle(fontSize: 14),
+            );
+          },
+          footer: (pw.Context context) {
+            return pw.Container(
+              alignment: pw.Alignment.centerRight,
+              margin: const pw.EdgeInsets.only(top: 10),
+              child: pw.Text(
+                'Página ${context.pageNumber} de ${context.pagesCount}',
+                style: const pw.TextStyle(
+                  fontSize: 10,
+                  color: PdfColors.grey600,
+                ),
+              ),
+            );
+          },
+          build: (pw.Context context) {
+            return [
+              pw.Container(
+                padding: const pw.EdgeInsets.all(20),
+                decoration: pw.BoxDecoration(
+                  border: pw.Border.all(color: PdfColors.green200, width: 2),
+                  borderRadius: pw.BorderRadius.circular(10),
+                ),
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text(
+                      'Total de registros: ${avistamientos.length}',
+                      style: pw.TextStyle(
+                        fontSize: 16,
+                        fontWeight: pw.FontWeight.bold,
+                        color: PdfColors.green800,
+                      ),
+                    ),
+                    pw.SizedBox(height: 10),
+                    pw.Text(
+                      'Fecha de generación: ${DateTime.now().toLocal().toString().split('.')[0]}',
+                      style: const pw.TextStyle(
+                        fontSize: 12,
+                        color: PdfColors.grey700,
+                      ),
+                    ),
+                  ],
+                ),
               ),
               pw.SizedBox(height: 20),
               pw.Table.fromTextArray(
@@ -236,12 +276,18 @@ class ExportService {
                 headerStyle: pw.TextStyle(
                   fontWeight: pw.FontWeight.bold,
                   fontSize: 10,
+                  color: PdfColors.white,
                 ),
                 cellStyle: const pw.TextStyle(fontSize: 8),
                 headerDecoration: const pw.BoxDecoration(
-                  color: PdfColors.grey300,
+                  color: PdfColors.green600,
                 ),
-                cellHeight: 25,
+                border: pw.TableBorder.all(
+                  color: PdfColors.green300,
+                  width: 0.5,
+                ),
+
+                cellHeight: 30,
                 cellAlignments: {
                   0: pw.Alignment.centerLeft,
                   1: pw.Alignment.centerLeft,
@@ -258,11 +304,6 @@ class ExportService {
                   12: pw.Alignment.centerLeft,
                   13: pw.Alignment.center,
                 },
-              ),
-              pw.SizedBox(height: 20),
-              pw.Text(
-                'Generado el ${DateTime.now().toString()}',
-                style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey),
               ),
             ];
           },
