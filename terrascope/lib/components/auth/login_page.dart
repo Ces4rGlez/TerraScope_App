@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:terrascope/services/auth_service.dart';
-import 'package:terrascope/services/session_service.dart'; 
+import 'package:terrascope/services/session_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -29,20 +29,20 @@ class _LoginPageState extends State<LoginPage> {
     setState(() => isLoading = true);
 
     final user = await AuthService().login(email, password);
-    
+
     if (user != null) {
       // ✅ GUARDAR LA SESIÓN
       final sessionSaved = await _sessionService.saveSession(user);
-      
+
       setState(() => isLoading = false);
-      
+
       if (sessionSaved) {
         print('✅ Sesión guardada correctamente');
         print('👤 Usuario: ${user['nombre_usuario']}');
-        
+
         // Navegar sin pasar argumentos (ya están en la sesión)
         Navigator.pushReplacementNamed(context, '/home');
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text("¡Bienvenido ${user['nombre_usuario']}! ✅"),

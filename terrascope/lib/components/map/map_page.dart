@@ -9,6 +9,7 @@ import '../../services/avistamiento_service.dart';
 import 'avistamiento_detail_card.dart';
 import 'avistamiento_detail_page.dart';
 import '../screens/pagina_inicio.dart';
+import '../export/export_dialog.dart';
 
 class MapPage extends StatefulWidget {
   final String? usuarioId;
@@ -185,76 +186,10 @@ class _MapPageState extends State<MapPage> {
   }
 
   Future<void> _exportToExcel() async {
-    try {
-      StringBuffer csvContent = StringBuffer();
-      csvContent.writeln(
-        'Nombre Común,Nombre Científico,Especie,Descripción,Latitud,Longitud,Estado Extinción,Hábitat',
-      );
-
-      for (var avistamiento in _filteredAvistamientos) {
-        csvContent.writeln(
-          '${avistamiento.nombreComun},${avistamiento.nombreCientifico},${avistamiento.especie},${avistamiento.descripcion},${avistamiento.ubicacion.latitud},${avistamiento.ubicacion.longitud},${avistamiento.estadoExtincion},${avistamiento.habitat.nombreHabitat}',
-        );
-      }
-
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Exportar Datos'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Se exportarán ${_filteredAvistamientos.length} registros'),
-              const SizedBox(height: 16),
-              const Text(
-                'Contenido CSV:',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              Container(
-                height: 200,
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(8),
-                  child: Text(
-                    csvContent.toString(),
-                    style: const TextStyle(fontSize: 12, fontFamily: 'Courier'),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cerrar'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Datos exportados exitosamente'),
-                  ),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color.fromARGB(255, 188, 255, 247),
-              ),
-              child: const Text('Descargar CSV'),
-            ),
-          ],
-        ),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error al exportar: $e')));
-    }
+    showDialog(
+      context: context,
+      builder: (context) => ExportDialog(avistamientos: _filteredAvistamientos),
+    );
   }
 
   List<Marker> _buildMarkers() {

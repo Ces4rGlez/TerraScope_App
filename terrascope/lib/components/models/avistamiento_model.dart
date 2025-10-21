@@ -17,7 +17,7 @@ class Avistamiento {
   final List<Comentario> comentarios;
   final String tipo;
   final String nombreUsuario;
- final Validacion validacion;
+  final Validacion validacion;
 
   Avistamiento({
     required this.id,
@@ -35,7 +35,6 @@ class Avistamiento {
     required this.tipo,
     required this.nombreUsuario,
     Validacion? validacion,
- 
   }) : this.validacion = validacion ?? Validacion();
 
   factory Avistamiento.fromJson(Map<String, dynamic> json) {
@@ -52,12 +51,13 @@ class Avistamiento {
       comportamiento: json['comportamiento'] ?? '',
       estadoExtincion: json['estado_extincion'] ?? '',
       estadoEspecimen: json['estado_especimen'] ?? '',
-      habitat: Habitat.fromJson(json['habitat'] ?? {}), 
-      comentarios: (json['comentarios'] as List?)
+      habitat: Habitat.fromJson(json['habitat'] ?? {}), // 👈 corregido
+      comentarios:
+          (json['comentarios'] as List?)
               ?.map((c) => Comentario.fromJson(c))
               .toList() ??
           [],
-           validacion: Validacion.fromJson(json['validacion'] ?? {}),
+      validacion: Validacion.fromJson(json['validacion'] ?? {}),
     );
   }
 

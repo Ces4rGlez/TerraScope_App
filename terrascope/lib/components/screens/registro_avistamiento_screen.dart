@@ -22,11 +22,13 @@ class CreateAvistamientoScreen extends StatefulWidget {
 class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
   final _formKey = GlobalKey<FormState>();
   final CameraService _cameraService = CameraService();
-  final FaunaFloraService _service =
-      FaunaFloraService(baseUrl: ApiConfig.baseUrl);
+  final FaunaFloraService _service = FaunaFloraService(
+    baseUrl: ApiConfig.baseUrl,
+  );
   final SessionService _sessionService = SessionService();
-  final HabitatService _habitatService =
-      HabitatService(baseUrl: ApiConfig.baseUrl);
+  final HabitatService _habitatService = HabitatService(
+    baseUrl: ApiConfig.baseUrl,
+  );
 
   // Controladores de texto
   final TextEditingController _nombreComunController = TextEditingController();
@@ -82,11 +84,11 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
       print('🔍 Intentando cargar hábitats...');
       final habitats = await _habitatService.getAllHabitats();
       print('✅ Hábitats cargados: ${habitats.length}');
-      
+
       if (habitats.isNotEmpty) {
         print('📋 Primer hábitat: ${habitats[0].nombreHabitat}');
       }
-      
+
       if (mounted) {
         setState(() {
           _habitats = habitats;
@@ -96,7 +98,7 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
     } catch (e, stackTrace) {
       print('❌ Error al cargar hábitats: $e');
       print('📍 Stack trace: $stackTrace');
-      
+
       if (mounted) {
         setState(() {
           _isLoadingHabitats = false;
@@ -156,7 +158,7 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
 
   Future<void> _getCurrentLocation() async {
     if (!mounted) return;
-    
+
     setState(() {
       _isLoadingLocation = true;
     });
@@ -165,7 +167,9 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
       // Verificar si los servicios de ubicación están habilitados
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
-        throw Exception('Los servicios de ubicación están deshabilitados. Por favor actívalos en configuración.');
+        throw Exception(
+          'Los servicios de ubicación están deshabilitados. Por favor actívalos en configuración.',
+        );
       }
 
       // Verificar permisos
@@ -178,20 +182,24 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
       }
 
       if (permission == LocationPermission.deniedForever) {
-        throw Exception('Los permisos de ubicación están denegados permanentemente. Ve a configuración para habilitarlos.');
+        throw Exception(
+          'Los permisos de ubicación están denegados permanentemente. Ve a configuración para habilitarlos.',
+        );
       }
 
       // Intentar obtener última ubicación conocida (más rápido)
       Position? lastPosition = await Geolocator.getLastKnownPosition();
-      
+
       if (lastPosition != null) {
         if (mounted) {
           setState(() {
             _latitudController.text = lastPosition.latitude.toStringAsFixed(6);
-            _longitudController.text = lastPosition.longitude.toStringAsFixed(6);
+            _longitudController.text = lastPosition.longitude.toStringAsFixed(
+              6,
+            );
             _isLoadingLocation = false;
           });
-          
+
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Ubicación obtenida (última conocida)'),
@@ -215,7 +223,7 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
           _longitudController.text = position.longitude.toStringAsFixed(6);
           _isLoadingLocation = false;
         });
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Ubicación obtenida exitosamente'),
@@ -229,7 +237,9 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
         setState(() {
           _isLoadingLocation = false;
         });
-        _showError('Tiempo de espera agotado. Intenta de nuevo en un lugar con mejor señal GPS.');
+        _showError(
+          'Tiempo de espera agotado. Intenta de nuevo en un lugar con mejor señal GPS.',
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -241,99 +251,103 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
     }
   }
 
- Future<void> _saveAvistamiento() async {
-  if (!_formKey.currentState!.validate()) {
-    return;
-  }
-
-  if (_imageBase64 == null) {
-    _showError('Por favor, toma una foto primero');
-    return;
-  }
-
-  if (_latitudController.text.isEmpty || _longitudController.text.isEmpty) {
-    _showError('Por favor, obtén la ubicación primero');
-    return;
-  }
-
-  setState(() {
-    _isSaving = true;
-  });
-
-  try {
-    // Obtener el nombre del usuario de la sesión
-    final nombreUsuario = await _sessionService.getUserName();
-    
-    if (nombreUsuario == null) {
-      _showError('No hay sesión activa. Por favor inicia sesión.');
-      setState(() {
-        _isSaving = false;
-      });
+  Future<void> _saveAvistamiento() async {
+    if (!_formKey.currentState!.validate()) {
       return;
     }
 
-    if (_selectedHabitat == null) {
-      _showError('Por favor selecciona un hábitat');
-      setState(() {
-        _isSaving = false;
-      });
+    if (_imageBase64 == null) {
+      _showError('Por favor, toma una foto primero');
       return;
     }
 
-    final avistamiento = Avistamiento(
-      id: '',
-      nombreComun: _nombreComunController.text,
-      nombreCientifico: _nombreCientificoController.text,
-      especie: _especieSeleccionada,
-      descripcion: _descripcionController.text,
-      imagen: _imageBase64!,
-      ubicacion: Ubicacion(
-        latitud: double.parse(_latitudController.text),
-        longitud: double.parse(_longitudController.text),
-      ),
-      comportamiento: _comportamientoController.text,
-      estadoExtincion: _estadoExtincion,
-      estadoEspecimen: _estadoEspecimenController.text,
-      habitat: _selectedHabitat!,
-      comentarios: [],
-      tipo: _tipo,
-      nombreUsuario: nombreUsuario,
-      // NO pasas validacion aquí, se inicializa automáticamente con valores por defecto
-    );
+    if (_latitudController.text.isEmpty || _longitudController.text.isEmpty) {
+      _showError('Por favor, obtén la ubicación primero');
+      return;
+    }
 
-    print('📤 Datos a enviar:');
-    print('  - Nombre: ${avistamiento.nombreComun}');
-    print('  - Usuario: ${avistamiento.nombreUsuario}');
-    print('  - Tipo: ${avistamiento.tipo}');
-    print('  - Habitat ID: ${avistamiento.habitat.idHabitat}');
-    print('  - Ubicación: ${avistamiento.ubicacion.latitud}, ${avistamiento.ubicacion.longitud}');
-    print('  - Validación: ${avistamiento.validacion.estado}, votos: ${avistamiento.validacion.votosComunidad}'); // 👈 Opcional: para debug
-    
-    final jsonData = avistamiento.toJson();
-    print('📋 JSON completo:');
-    print(jsonData);
+    setState(() {
+      _isSaving = true;
+    });
 
-    await _service.createFaunaFlora(avistamiento);
+    try {
+      // Obtener el nombre del usuario de la sesión
+      final nombreUsuario = await _sessionService.getUserName();
 
-    if (mounted) {
-      Navigator.pop(context, true);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Avistamiento creado exitosamente'),
-          backgroundColor: Colors.green,
+      if (nombreUsuario == null) {
+        _showError('No hay sesión activa. Por favor inicia sesión.');
+        setState(() {
+          _isSaving = false;
+        });
+        return;
+      }
+
+      if (_selectedHabitat == null) {
+        _showError('Por favor selecciona un hábitat');
+        setState(() {
+          _isSaving = false;
+        });
+        return;
+      }
+
+      final avistamiento = Avistamiento(
+        id: '',
+        nombreComun: _nombreComunController.text,
+        nombreCientifico: _nombreCientificoController.text,
+        especie: _especieSeleccionada,
+        descripcion: _descripcionController.text,
+        imagen: _imageBase64!,
+        ubicacion: Ubicacion(
+          latitud: double.parse(_latitudController.text),
+          longitud: double.parse(_longitudController.text),
         ),
+        comportamiento: _comportamientoController.text,
+        estadoExtincion: _estadoExtincion,
+        estadoEspecimen: _estadoEspecimenController.text,
+        habitat: _selectedHabitat!,
+        comentarios: [],
+        tipo: _tipo,
+        nombreUsuario: nombreUsuario,
+        // NO pasas validacion aquí, se inicializa automáticamente con valores por defecto
       );
-    }
-  } catch (e) {
-    _showError('Error al guardar: $e');
-  } finally {
-    if (mounted) {
-      setState(() {
-        _isSaving = false;
-      });
+
+      print('📤 Datos a enviar:');
+      print('  - Nombre: ${avistamiento.nombreComun}');
+      print('  - Usuario: ${avistamiento.nombreUsuario}');
+      print('  - Tipo: ${avistamiento.tipo}');
+      print('  - Habitat ID: ${avistamiento.habitat.idHabitat}');
+      print(
+        '  - Ubicación: ${avistamiento.ubicacion.latitud}, ${avistamiento.ubicacion.longitud}',
+      );
+      print(
+        '  - Validación: ${avistamiento.validacion.estado}, votos: ${avistamiento.validacion.votosComunidad}',
+      ); // 👈 Opcional: para debug
+
+      final jsonData = avistamiento.toJson();
+      print('📋 JSON completo:');
+      print(jsonData);
+
+      await _service.createFaunaFlora(avistamiento);
+
+      if (mounted) {
+        Navigator.pop(context, true);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Avistamiento creado exitosamente'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      _showError('Error al guardar: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
     }
   }
-}
 
   void _showError(String message) {
     if (!mounted) return;
@@ -373,11 +387,7 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.camera_alt,
-              size: 100,
-              color: Colors.grey[400],
-            ),
+            Icon(Icons.camera_alt, size: 100, color: Colors.grey[400]),
             const SizedBox(height: 24),
             const Text(
               'Captura la imagen del avistamiento',
@@ -391,10 +401,7 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
             const SizedBox(height: 12),
             Text(
               'Toma una foto clara del animal o planta',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[700],
-              ),
+              style: TextStyle(fontSize: 14, color: Colors.grey[700]),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 40),
@@ -667,9 +674,7 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
                 'En peligro',
                 'En peligro crítico',
                 'Extinto',
-              ]
-                  .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-                  .toList(),
+              ].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
               onChanged: (value) {
                 if (value != null) {
                   setState(() {
@@ -704,31 +709,31 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
             _isLoadingHabitats
                 ? const Center(child: CircularProgressIndicator())
                 : _habitats.isEmpty
-                    ? Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.orange[50],
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.orange),
+                ? Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.orange[50],
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.orange),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.warning, color: Colors.orange[700]),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'No hay hábitats disponibles. Verifica la conexión.',
+                            style: TextStyle(color: Colors.orange[900]),
+                          ),
                         ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.warning, color: Colors.orange[700]),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                'No hay hábitats disponibles. Verifica la conexión.',
-                                style: TextStyle(color: Colors.orange[900]),
-                              ),
-                            ),
-                            TextButton(
-                              onPressed: _loadHabitats,
-                              child: const Text('Reintentar'),
-                            ),
-                          ],
+                        TextButton(
+                          onPressed: _loadHabitats,
+                          child: const Text('Reintentar'),
                         ),
-                      )
-                    : DropdownButtonFormField<Habitat>(
+                      ],
+                    ),
+                  )
+                : DropdownButtonFormField<Habitat>(
                     value: _selectedHabitat,
                     decoration: InputDecoration(
                       labelText: 'Selecciona un hábitat',
@@ -822,10 +827,7 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
         children: [
           Text(
             label,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
-            ),
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
           ),
           const SizedBox(height: 8),
           TextFormField(
