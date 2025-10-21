@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 
 class ApiService {
   static const String baseUrl =
-      "http://192.168.1.17:3000/api"; // Cambia a tu IP si pruebas en móvil
+      "http://10.0.2.2:3000/api"; // Cambia a tu IP si pruebas en móvil
 
   // obtener todos los usuarios
   static Future<List<dynamic>> getUsuarios() async {

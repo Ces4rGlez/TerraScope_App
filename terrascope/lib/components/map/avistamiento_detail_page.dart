@@ -158,19 +158,17 @@ class _AvistamientoDetailPageState extends State<AvistamientoDetailPage> {
 
   Widget _buildMainImage() {
     try {
-      if (widget.avistamiento.imagen.isNotEmpty &&
-          widget.avistamiento.imagen[0].startsWith('http')) {
+      if (widget.avistamiento.imagen.startsWith('http')) {
         return Image.network(
-          widget.avistamiento.imagen[0],
+          widget.avistamiento.imagen,
           width: double.infinity,
           height: 250,
           fit: BoxFit.cover,
           errorBuilder: (context, error, stackTrace) => _placeholderImage(),
         );
-      } else if (widget.avistamiento.imagen.isNotEmpty &&
-          widget.avistamiento.imagen[0].isNotEmpty) {
+      } else if (widget.avistamiento.imagen.isNotEmpty) {
         return Image.memory(
-          base64Decode(widget.avistamiento.imagen[0]),
+          base64Decode(widget.avistamiento.imagen),
           width: double.infinity,
           height: 250,
           fit: BoxFit.cover,
