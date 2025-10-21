@@ -9,6 +9,7 @@ import '../../services/habitat_service.dart';
 import '../../components/models/avistamiento_model.dart';
 import '../../components/models/habitat.dart';
 import '../../config/api_config.dart';
+import '../models/validacion_model.dart';
 
 class CreateAvistamientoScreen extends StatefulWidget {
   const CreateAvistamientoScreen({super.key});
@@ -47,6 +48,7 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
   bool _isLoadingHabitats = true;
   String _tipo = 'Fauna';
   String _estadoExtincion = 'Preocupación menor';
+  String _especieSeleccionada = 'Mamífero';
   List<Habitat> _habitats = [];
   Habitat? _selectedHabitat;
 
@@ -58,6 +60,17 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
     'Territorial',
   ];
 
+  final List<String> _especiesDisponibles = [
+    'Mamífero',
+    'Ave',
+    'Reptil',
+    'Anfibio',
+    'Pez',
+    'Insecto',
+    'Planta',
+    'Otro',
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -66,14 +79,24 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
 
   Future<void> _loadHabitats() async {
     try {
+      print('🔍 Intentando cargar hábitats...');
       final habitats = await _habitatService.getAllHabitats();
+      print('✅ Hábitats cargados: ${habitats.length}');
+      
+      if (habitats.isNotEmpty) {
+        print('📋 Primer hábitat: ${habitats[0].nombreHabitat}');
+      }
+      
       if (mounted) {
         setState(() {
           _habitats = habitats;
           _isLoadingHabitats = false;
         });
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      print('❌ Error al cargar hábitats: $e');
+      print('📍 Stack trace: $stackTrace');
+      
       if (mounted) {
         setState(() {
           _isLoadingHabitats = false;
@@ -88,7 +111,6 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
     _nombreComunController.dispose();
     _nombreCientificoController.dispose();
     _descripcionController.dispose();
-    _especieController.dispose();
     _latitudController.dispose();
     _longitudController.dispose();
     _comportamientoController.dispose();
@@ -219,86 +241,99 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
     }
   }
 
-  Future<void> _saveAvistamiento() async {
-    if (!_formKey.currentState!.validate()) {
+ Future<void> _saveAvistamiento() async {
+  if (!_formKey.currentState!.validate()) {
+    return;
+  }
+
+  if (_imageBase64 == null) {
+    _showError('Por favor, toma una foto primero');
+    return;
+  }
+
+  if (_latitudController.text.isEmpty || _longitudController.text.isEmpty) {
+    _showError('Por favor, obtén la ubicación primero');
+    return;
+  }
+
+  setState(() {
+    _isSaving = true;
+  });
+
+  try {
+    // Obtener el nombre del usuario de la sesión
+    final nombreUsuario = await _sessionService.getUserName();
+    
+    if (nombreUsuario == null) {
+      _showError('No hay sesión activa. Por favor inicia sesión.');
+      setState(() {
+        _isSaving = false;
+      });
       return;
     }
 
-    if (_imageBase64 == null) {
-      _showError('Por favor, toma una foto primero');
+    if (_selectedHabitat == null) {
+      _showError('Por favor selecciona un hábitat');
+      setState(() {
+        _isSaving = false;
+      });
       return;
     }
 
-    if (_latitudController.text.isEmpty || _longitudController.text.isEmpty) {
-      _showError('Por favor, obtén la ubicación primero');
-      return;
-    }
+    final avistamiento = Avistamiento(
+      id: '',
+      nombreComun: _nombreComunController.text,
+      nombreCientifico: _nombreCientificoController.text,
+      especie: _especieSeleccionada,
+      descripcion: _descripcionController.text,
+      imagen: _imageBase64!,
+      ubicacion: Ubicacion(
+        latitud: double.parse(_latitudController.text),
+        longitud: double.parse(_longitudController.text),
+      ),
+      comportamiento: _comportamientoController.text,
+      estadoExtincion: _estadoExtincion,
+      estadoEspecimen: _estadoEspecimenController.text,
+      habitat: _selectedHabitat!,
+      comentarios: [],
+      tipo: _tipo,
+      nombreUsuario: nombreUsuario,
+      // NO pasas validacion aquí, se inicializa automáticamente con valores por defecto
+    );
 
-    setState(() {
-      _isSaving = true;
-    });
+    print('📤 Datos a enviar:');
+    print('  - Nombre: ${avistamiento.nombreComun}');
+    print('  - Usuario: ${avistamiento.nombreUsuario}');
+    print('  - Tipo: ${avistamiento.tipo}');
+    print('  - Habitat ID: ${avistamiento.habitat.idHabitat}');
+    print('  - Ubicación: ${avistamiento.ubicacion.latitud}, ${avistamiento.ubicacion.longitud}');
+    print('  - Validación: ${avistamiento.validacion.estado}, votos: ${avistamiento.validacion.votosComunidad}'); // 👈 Opcional: para debug
+    
+    final jsonData = avistamiento.toJson();
+    print('📋 JSON completo:');
+    print(jsonData);
 
-    try {
-      // Obtener el nombre del usuario de la sesión
-      final nombreUsuario = await _sessionService.getUserName();
-      
-      if (nombreUsuario == null) {
-        _showError('No hay sesión activa. Por favor inicia sesión.');
-        setState(() {
-          _isSaving = false;
-        });
-        return;
-      }
+    await _service.createFaunaFlora(avistamiento);
 
-      if (_selectedHabitat == null) {
-        _showError('Por favor selecciona un hábitat');
-        setState(() {
-          _isSaving = false;
-        });
-        return;
-      }
-
-      final avistamiento = Avistamiento(
-        id: '',
-        nombreComun: _nombreComunController.text,
-        nombreCientifico: _nombreCientificoController.text,
-        especie: _especieController.text,
-        descripcion: _descripcionController.text,
-        imagen: _imageBase64!,
-        ubicacion: Ubicacion(
-          latitud: double.parse(_latitudController.text),
-          longitud: double.parse(_longitudController.text),
+    if (mounted) {
+      Navigator.pop(context, true);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Avistamiento creado exitosamente'),
+          backgroundColor: Colors.green,
         ),
-        comportamiento: _comportamientoController.text,
-        estadoExtincion: _estadoExtincion,
-        estadoEspecimen: _estadoEspecimenController.text,
-        habitat: _selectedHabitat!,
-        comentarios: [],
-        tipo: _tipo,
-        nombreUsuario: nombreUsuario,
       );
-
-      await _service.createFaunaFlora(avistamiento);
-
-      if (mounted) {
-        Navigator.pop(context, true);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Avistamiento creado exitosamente'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    } catch (e) {
-      _showError('Error al guardar: $e');
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isSaving = false;
-        });
-      }
+    }
+  } catch (e) {
+    _showError('Error al guardar: $e');
+  } finally {
+    if (mounted) {
+      setState(() {
+        _isSaving = false;
+      });
     }
   }
+}
 
   void _showError(String message) {
     if (!mounted) return;
@@ -492,14 +527,52 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
                   value?.isEmpty ?? true ? 'Campo requerido' : null,
             ),
 
-            // Especie
-            _buildTextField(
-              controller: _especieController,
-              label: 'Especie',
-              hint: 'Ej: Mamífero',
-              validator: (value) =>
-                  value?.isEmpty ?? true ? 'Campo requerido' : null,
+            // Especie con dropdown y iconos
+            const Text(
+              'Especie',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
+            const SizedBox(height: 8),
+            DropdownButtonFormField<String>(
+              value: _especieSeleccionada,
+              decoration: InputDecoration(
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                filled: true,
+                fillColor: Colors.white,
+              ),
+              items: _especiesDisponibles.map((especie) {
+                return DropdownMenuItem<String>(
+                  value: especie,
+                  child: Row(
+                    children: [
+                      Icon(
+                        _getIconForEspecie(especie),
+                        color: _getColorForEspecie(especie),
+                        size: 24,
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        especie,
+                        style: TextStyle(
+                          color: _getColorForEspecie(especie),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+              onChanged: (value) {
+                if (value != null) {
+                  setState(() {
+                    _especieSeleccionada = value;
+                  });
+                }
+              },
+            ),
+            const SizedBox(height: 16),
 
             // Ubicación
             const Text(
@@ -630,7 +703,32 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
 
             _isLoadingHabitats
                 ? const Center(child: CircularProgressIndicator())
-                : DropdownButtonFormField<Habitat>(
+                : _habitats.isEmpty
+                    ? Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.orange[50],
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.orange),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.warning, color: Colors.orange[700]),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                'No hay hábitats disponibles. Verifica la conexión.',
+                                style: TextStyle(color: Colors.orange[900]),
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: _loadHabitats,
+                              child: const Text('Reintentar'),
+                            ),
+                          ],
+                        ),
+                      )
+                    : DropdownButtonFormField<Habitat>(
                     value: _selectedHabitat,
                     decoration: InputDecoration(
                       labelText: 'Selecciona un hábitat',
@@ -756,5 +854,54 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
         ],
       ),
     );
+  }
+
+  // Métodos para iconos y colores de especies
+  IconData _getIconForEspecie(String especie) {
+    switch (especie.toLowerCase()) {
+      case 'mamífero':
+      case 'mamifero':
+        return Icons.pets;
+      case 'ave':
+        return Icons.flutter_dash;
+      case 'reptil':
+        return Icons.workspaces_outline;
+      case 'anfibio':
+        return Icons.water;
+      case 'pez':
+        return Icons.phishing;
+      case 'insecto':
+        return Icons.bug_report;
+      case 'planta':
+        return Icons.local_florist;
+      case 'otro':
+        return Icons.category;
+      default:
+        return Icons.help_outline;
+    }
+  }
+
+  Color _getColorForEspecie(String especie) {
+    switch (especie.toLowerCase()) {
+      case 'mamífero':
+      case 'mamifero':
+        return const Color(0xFF8D6E63); // Café
+      case 'ave':
+        return const Color(0xFF42A5F5); // Azul cielo
+      case 'reptil':
+        return const Color(0xFF66BB6A); // Verde
+      case 'anfibio':
+        return const Color(0xFF26C6DA); // Cyan
+      case 'pez':
+        return const Color(0xFF29B6F6); // Azul agua
+      case 'insecto':
+        return const Color(0xFFFFCA28); // Amarillo
+      case 'planta':
+        return const Color(0xFF4CAF50); // Verde planta
+      case 'otro':
+        return const Color(0xFF9E9E9E); // Gris
+      default:
+        return const Color(0xFF757575); // Gris oscuro
+    }
   }
 }
