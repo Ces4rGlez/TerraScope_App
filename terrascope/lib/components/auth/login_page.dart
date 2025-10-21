@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:terrascope/services/auth_service.dart';
+<<<<<<< HEAD
 import 'package:terrascope/services/session_service.dart';
+=======
+import 'package:terrascope/services/session_service.dart'; 
+>>>>>>> origin/main
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -12,6 +16,7 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+  final SessionService _sessionService = SessionService(); // ← Instanciar
   bool isLoading = false;
 
   Future<void> _login() async {
@@ -28,9 +33,9 @@ class _LoginPageState extends State<LoginPage> {
     setState(() => isLoading = true);
 
     final user = await AuthService().login(email, password);
-    setState(() => isLoading = false);
-
+    
     if (user != null) {
+<<<<<<< HEAD
       // Guardar la sesión del usuario
       final sessionService = SessionService();
       final sessionSaved = await sessionService.saveSession({
@@ -48,15 +53,40 @@ class _LoginPageState extends State<LoginPage> {
             'nombre_usuario': user['nombre_usuario'],
             'email_usuario': user['email_usuario'],
           },
+=======
+      // ✅ GUARDAR LA SESIÓN
+      final sessionSaved = await _sessionService.saveSession(user);
+      
+      setState(() => isLoading = false);
+      
+      if (sessionSaved) {
+        print('✅ Sesión guardada correctamente');
+        print('👤 Usuario: ${user['nombre_usuario']}');
+        
+        // Navegar sin pasar argumentos (ya están en la sesión)
+        Navigator.pushReplacementNamed(context, '/home');
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("¡Bienvenido ${user['nombre_usuario']}! ✅"),
+            backgroundColor: Colors.green,
+          ),
+>>>>>>> origin/main
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
+<<<<<<< HEAD
             content: Text("Error al guardar la sesión. Inténtalo de nuevo."),
+=======
+            content: Text("Error al guardar la sesión"),
+            backgroundColor: Colors.red,
+>>>>>>> origin/main
           ),
         );
       }
     } else {
+      setState(() => isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Correo o contraseña incorrectos ❌")),
       );

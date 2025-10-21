@@ -1,5 +1,6 @@
 import 'habitat.dart';
 import '../models/comentario.dart';
+import '../models/validacion_model.dart';
 
 class Avistamiento {
   final String id;
@@ -16,6 +17,7 @@ class Avistamiento {
   final List<Comentario> comentarios;
   final String tipo;
   final String nombreUsuario;
+  final Validacion validacion;
 
   Avistamiento({
     required this.id,
@@ -32,7 +34,8 @@ class Avistamiento {
     required this.comentarios,
     required this.tipo,
     required this.nombreUsuario,
-  });
+    Validacion? validacion,
+  }) : this.validacion = validacion ?? Validacion();
 
   factory Avistamiento.fromJson(Map<String, dynamic> json) {
     return Avistamiento(
@@ -54,6 +57,7 @@ class Avistamiento {
               ?.map((c) => Comentario.fromJson(c))
               .toList() ??
           [],
+      validacion: Validacion.fromJson(json['validacion'] ?? {}),
     );
   }
 
@@ -72,6 +76,7 @@ class Avistamiento {
       'estado_extincion': estadoExtincion,
       'estado_especimen': estadoEspecimen,
       'habitat': habitat.toJson(),
+      'validacion': validacion.toJson(),
       'comentarios': comentarios.map((c) => c.toJson()).toList(),
     };
   }

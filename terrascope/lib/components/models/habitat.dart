@@ -1,3 +1,4 @@
+// components/models/habitat.dart
 class Habitat {
   final String idHabitat;
   final String nombreHabitat;
@@ -16,13 +17,23 @@ class Habitat {
       };
 
   factory Habitat.fromJson(Map<String, dynamic> json) {
+    // MongoDB retorna '_id' como ObjectId
+    final id = json['_id']?.toString() ?? '';
+    final nombre = json['nombre_habitat'] ?? 'Sin nombre';
+    final descripcion = json['descripcion_habitat'] ?? 'Sin descripción';
+    
+    // Debug
+    print('🔍 Habitat.fromJson - _id: ${json['_id']}, ID capturado: "$id"');
+    
     return Habitat(
-      idHabitat: json['id_habitat'] ?? '',  // ← Valor por defecto si es null
-      nombreHabitat: json['nombre_habitat'] ?? 'Sin nombre',  // ← Valor por defecto
-      descripcionHabitat: json['descripcion_habitat'] ?? 'Sin descripción',  // ← Valor por defecto
+      idHabitat: id,
+      nombreHabitat: nombre,
+      descripcionHabitat: descripcion,
     );
   }
 
   @override
-  String toString() => 'Habitat(nombre: $nombreHabitat)';
+  String toString() => 'Habitat(id: $idHabitat, nombre: $nombreHabitat)';
 }
+
+
