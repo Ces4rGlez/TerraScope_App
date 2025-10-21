@@ -67,7 +67,6 @@ class AvistamientoService {
     }
   }
 
-  // ✅ NUEVO: Búsqueda de avistamientos
   static Future<List<Avistamiento>> searchAvistamientos(String query) async {
     final avistamientos = await getAvistamientos();
 

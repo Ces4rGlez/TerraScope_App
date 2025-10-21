@@ -6,13 +6,13 @@ import 'package:permission_handler/permission_handler.dart';
 class CameraService {
   final ImagePicker _picker = ImagePicker();
 
-  // Solicitar permisos de cámara
+ 
   Future<bool> requestCameraPermission() async {
     var status = await Permission.camera.request();
     return status.isGranted;
   }
 
-  // Verificar estado de permisos de cámara
+ 
   Future<bool> hasCameraPermission() async {
     var status = await Permission.camera.status;
     return status.isGranted;
