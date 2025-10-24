@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../components/models/avistamiento_model.dart';
+import '../components/models/zona_frecuente.dart';
 import '../config/api_config.dart';
 
 class AvistamientoService {

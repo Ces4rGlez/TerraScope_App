@@ -5,6 +5,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../models/avistamiento_model.dart';
+import '../models/zona_frecuente.dart';
 import '../../services/avistamiento_service.dart';
 import 'avistamiento_detail_card.dart';
 import 'avistamiento_detail_page.dart';
@@ -413,7 +414,36 @@ class _MapPageState extends State<MapPage> {
     }
 
     for (var avistamiento in _filteredAvistamientos) {
-      if (avistamiento.estadoExtincion.toLowerCase() == 'en peligro') {
+      final estado = avistamiento.estadoExtincion.toLowerCase();
+      if (estado == 'preocupación menor') {
+        circles.add(
+          CircleMarker(
+            point: LatLng(
+              avistamiento.ubicacion.latitud,
+              avistamiento.ubicacion.longitud,
+            ),
+            radius: 500,
+            useRadiusInMeter: true,
+            color: Colors.green.withOpacity(0.15),
+            borderColor: Colors.green.withOpacity(0.6),
+            borderStrokeWidth: 3,
+          ),
+        );
+      } else if (estado == 'vulnerable') {
+        circles.add(
+          CircleMarker(
+            point: LatLng(
+              avistamiento.ubicacion.latitud,
+              avistamiento.ubicacion.longitud,
+            ),
+            radius: 500,
+            useRadiusInMeter: true,
+            color: Colors.yellow.withOpacity(0.15),
+            borderColor: Colors.yellow.withOpacity(0.6),
+            borderStrokeWidth: 3,
+          ),
+        );
+      } else if (estado == 'en peligro') {
         circles.add(
           CircleMarker(
             point: LatLng(
@@ -424,6 +454,34 @@ class _MapPageState extends State<MapPage> {
             useRadiusInMeter: true,
             color: Colors.orange.withOpacity(0.15),
             borderColor: Colors.orange.withOpacity(0.6),
+            borderStrokeWidth: 3,
+          ),
+        );
+      } else if (estado == 'en peligro crítico') {
+        circles.add(
+          CircleMarker(
+            point: LatLng(
+              avistamiento.ubicacion.latitud,
+              avistamiento.ubicacion.longitud,
+            ),
+            radius: 500,
+            useRadiusInMeter: true,
+            color: Colors.red.withOpacity(0.15),
+            borderColor: Colors.red.withOpacity(0.6),
+            borderStrokeWidth: 3,
+          ),
+        );
+      } else if (estado == 'extinto') {
+        circles.add(
+          CircleMarker(
+            point: LatLng(
+              avistamiento.ubicacion.latitud,
+              avistamiento.ubicacion.longitud,
+            ),
+            radius: 500,
+            useRadiusInMeter: true,
+            color: Colors.black.withOpacity(0.15),
+            borderColor: Colors.black.withOpacity(0.6),
             borderStrokeWidth: 3,
           ),
         );
