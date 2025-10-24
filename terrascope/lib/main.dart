@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:terrascope/components/screens/login_page.dart';
 import 'package:terrascope/components/screens/pagina_inicio.dart';
-import 'components/auth/register_page.dart';
-import 'components/auth/login_page.dart';
+import 'package:terrascope/components/screens/register_page.dart';
 import 'components/map/map_page.dart';
 
 void main() {

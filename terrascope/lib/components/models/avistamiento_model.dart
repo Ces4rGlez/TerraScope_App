@@ -4,6 +4,7 @@ import '../models/validacion_model.dart';
 
 class Avistamiento {
   final String id;
+  final String? idUsuario; 
   final String nombreComun;
   final String nombreCientifico;
   final String especie;
@@ -17,10 +18,11 @@ class Avistamiento {
   final List<Comentario> comentarios;
   final String tipo;
   final String nombreUsuario;
- final Validacion validacion;
+  final Validacion validacion;
 
   Avistamiento({
     required this.id,
+    this.idUsuario, 
     required this.nombreComun,
     required this.nombreCientifico,
     required this.especie,
@@ -35,12 +37,12 @@ class Avistamiento {
     required this.tipo,
     required this.nombreUsuario,
     Validacion? validacion,
- 
-  }) : this.validacion = validacion ?? Validacion();
+  }) : validacion = validacion ?? Validacion();
 
   factory Avistamiento.fromJson(Map<String, dynamic> json) {
     return Avistamiento(
       id: json['_id'] ?? '',
+      idUsuario: json['id_usuario'], 
       nombreComun: json['nombre_comun'] ?? '',
       nombreCientifico: json['nombre_cientifico'] ?? '',
       especie: json['especie'] ?? '',
@@ -52,18 +54,19 @@ class Avistamiento {
       comportamiento: json['comportamiento'] ?? '',
       estadoExtincion: json['estado_extincion'] ?? '',
       estadoEspecimen: json['estado_especimen'] ?? '',
-      habitat: Habitat.fromJson(json['habitat'] ?? {}), 
+      habitat: Habitat.fromJson(json['habitat'] ?? {}),
       comentarios: (json['comentarios'] as List?)
               ?.map((c) => Comentario.fromJson(c))
               .toList() ??
           [],
-           validacion: Validacion.fromJson(json['validacion'] ?? {}),
+      validacion: Validacion.fromJson(json['validacion'] ?? {}),
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       '_id': id,
+      'id_usuario': idUsuario, 
       'nombre_comun': nombreComun,
       'nombre_cientifico': nombreCientifico,
       'especie': especie,
@@ -83,7 +86,7 @@ class Avistamiento {
 
   @override
   String toString() {
-    return 'Avistamiento(id: $id, nombre: $nombreComun, especie: $especie)';
+    return 'Avistamiento(id: $id, usuario: $nombreUsuario, especie: $especie)';
   }
 }
 

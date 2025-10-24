@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:terrascope/services/ia_service.dart';
 import '../../services/camera_service.dart';
 import '../../services/fauna_flora_service.dart';
 import '../../services/session_service.dart';
@@ -51,6 +52,9 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
   String _especieSeleccionada = 'Mamífero';
   List<Habitat> _habitats = [];
   Habitat? _selectedHabitat;
+  bool _cargando = false;
+  Map<String, dynamic>? _resultadoIA;
+
 
   final List<String> _comportamientosComunes = [
     'Agresivo',
@@ -119,40 +123,172 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
   }
 
   Future<void> _takePhoto() async {
-    try {
-      final File? photo = await _cameraService.takePhoto();
-      if (photo != null) {
-        final String base64 = await _cameraService.convertImageToBase64(photo);
-        if (mounted) {
-          setState(() {
-            _imageFile = photo;
-            _imageBase64 = base64;
-          });
-        }
-        // NO obtener ubicación automáticamente - deja que el usuario la pida
+  try {
+    final File? photo = await _cameraService.takePhoto();
+    if (photo != null) {
+      final String base64 = await _cameraService.convertImageToBase64(photo);
+      if (mounted) {
+        setState(() {
+          _imageFile = photo;
+          _imageBase64 = base64;
+        });
       }
-    } catch (e) {
-      _showError('Error al tomar foto: $e');
+
+    }
+  } catch (e) {
+    _showError('Error al tomar foto: $e');
+  }
+}
+
+Future<void> _pickImageFromGallery() async {
+  try {
+    final File? image = await _cameraService.pickImageFromGallery();
+    if (image != null) {
+      final String base64 = await _cameraService.convertImageToBase64(image);
+      if (mounted) {
+        setState(() {
+          _imageFile = image;
+          _imageBase64 = base64;
+        });
+      }
+    }
+  } catch (e) {
+    _showError('Error al seleccionar imagen: $e');
+  }
+}
+
+Future<void> _showSpeciesModal() async {
+  if (_resultadoIA == null) return;
+
+  final nombreComunIA = _resultadoIA!['nombre_comun'] ?? '';
+  final nombreCientificoIA = _resultadoIA!['nombre_cientifico'] ?? '';
+  final descripcionIA = _resultadoIA!['descripcion'] ?? '';
+  final nivelConfianza = _resultadoIA!['nivel_confianza'] ?? '';
+
+  bool isUnknown = nombreComunIA.toLowerCase() == 'desconocido' ||
+                   nombreCientificoIA.toLowerCase() == 'desconocido';
+
+  double getConfidencePercent(String nivel) {
+    switch (nivel.toLowerCase()) {
+      case 'alto':
+        return 1.0; // 100%
+      case 'medio':
+        return 0.66; // 66%
+      case 'bajo':
+        return 0.33; // 33%
+      default:
+        return 0.0;
     }
   }
 
-  Future<void> _pickImageFromGallery() async {
-    try {
-      final File? image = await _cameraService.pickImageFromGallery();
-      if (image != null) {
-        final String base64 = await _cameraService.convertImageToBase64(image);
-        if (mounted) {
-          setState(() {
-            _imageFile = image;
-            _imageBase64 = base64;
-          });
-        }
-        // NO obtener ubicación automáticamente - deja que el usuario la pida
-      }
-    } catch (e) {
-      _showError('Error al seleccionar imagen: $e');
+  Color getColorForConfidence(String nivel) {
+    switch (nivel.toLowerCase()) {
+      case 'alto':
+        return Colors.green;
+      case 'medio':
+        return Colors.yellow[700]!;
+      case 'bajo':
+        return Colors.red;
+      default:
+        return Colors.grey;
     }
   }
+
+  showDialog(
+    context: context,
+    builder: (context) {
+      final percent = getConfidencePercent(nivelConfianza);
+      final color = getColorForConfidence(nivelConfianza);
+
+      return AlertDialog(
+        title: const Text('Información del Avistamiento'),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (nombreComunIA.isNotEmpty)
+                Text('Nombre Común: $nombreComunIA', style: const TextStyle(fontWeight: FontWeight.bold)),
+              if (nombreCientificoIA.isNotEmpty)
+                Text('Nombre Científico: $nombreCientificoIA', style: const TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              if (descripcionIA.isNotEmpty)
+                Text('Descripción: $descripcionIA'),
+              const SizedBox(height: 16),
+              if (nivelConfianza.isNotEmpty) ...[
+                const Text('Nivel de Confianza:', style: TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 4),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: LinearProgressIndicator(
+                    value: percent,
+                    color: color,
+                    backgroundColor: Colors.grey[300],
+                    minHeight: 12,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  nivelConfianza,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: color,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cerrar'),
+          ),
+          ElevatedButton(
+            onPressed: isUnknown
+                ? null // deshabilita el botón si es "Desconocido"
+                : () {
+                    setState(() {
+                      _nombreComunController.text = nombreComunIA;
+                      _nombreCientificoController.text = nombreCientificoIA;
+                    });
+                    Navigator.of(context).pop();
+                  },
+            child: const Text('Autocompletar campos'),
+          ),
+        ],
+      );
+    },
+  );
+}
+
+
+
+
+/// 🔍 Llamada al servicio de IA
+Future<void> _identificarEspecie(String imagenBase64) async {
+  try {
+    setState(() => _cargando = true);
+
+    final resultado = await IAService.identificarEspecie(imagenBase64);
+
+    if (mounted) {
+      setState(() {
+        _resultadoIA = resultado;
+      });
+      _showSpeciesModal();
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Identificación completada')),
+      
+    );
+  } catch (e) {
+    _showError('Error al identificar: $e');
+  } finally {
+    if (mounted) setState(() => _cargando = false);
+  }
+}
+
 
   Future<void> _getCurrentLocation() async {
     if (!mounted) return;
@@ -478,6 +614,31 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
               ),
             ),
             const SizedBox(height: 24),
+            // Botón para identificar especie
+if (_imageBase64 != null)
+  SizedBox(
+    width: double.infinity,
+    height: 50,
+    child: ElevatedButton.icon(
+      onPressed: _cargando ? null : () => _identificarEspecie(_imageBase64!),
+      icon: _cargando
+          ? const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+            )
+          : const Icon(Icons.search),
+      label: const Text('Identificar Especie'),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: const Color(0xFF5C6445),
+        foregroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+    ),
+  ),
+const SizedBox(height: 24),
 
             // Tipo (Fauna/Flora)
             const Text(
