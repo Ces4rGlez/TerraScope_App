@@ -5,10 +5,13 @@ import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../models/avistamiento_model.dart';
+import '../models/zona_frecuente.dart';
 import '../../services/avistamiento_service.dart';
 import 'avistamiento_detail_card.dart';
 import 'avistamiento_detail_page.dart';
 import '../screens/pagina_inicio.dart';
+import '../export/export_dialog.dart';
+import '../../services/routing_service.dart';
 
 class MapPage extends StatefulWidget {
   final String? usuarioId;
@@ -32,6 +35,8 @@ class _MapPageState extends State<MapPage> {
   bool _locationError = false;
   bool _isSearching = false;
   int _currentIndex = 0;
+  List<LatLng> _routePoints = [];
+  bool _isLoadingRoute = false;
 
   @override
   void initState() {
@@ -54,6 +59,88 @@ class _MapPageState extends State<MapPage> {
           const SnackBar(content: Text('Permiso de ubicación denegado')),
         );
       }
+    }
+  }
+
+  Future<void> _showRouteToAvistamiento(Avistamiento avistamiento) async {
+    if (_currentPosition == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No se pudo obtener tu ubicación'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoadingRoute = true;
+      _routePoints = [];
+    });
+
+    try {
+      final start = _currentPosition!;
+      final end = LatLng(
+        avistamiento.ubicacion.latitud,
+        avistamiento.ubicacion.longitud,
+      );
+
+      // Calcular distancia
+      final distance = RoutingService.calculateDistance(start, end);
+
+      if (distance > 50) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'El avistamiento está a ${distance.toStringAsFixed(1)} km. Debe estar dentro de 50 km.',
+            ),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        setState(() {
+          _isLoadingRoute = false;
+        });
+        return;
+      }
+
+      // Obtener ruta
+      final route = await RoutingService.getRoute(start, end);
+
+      if (route.isEmpty) {
+        throw Exception('No se pudo calcular la ruta');
+      }
+
+      setState(() {
+        _routePoints = route;
+        _isLoadingRoute = false;
+        _selectedAvistamiento = avistamiento;
+      });
+
+      // Centrar mapa en la ruta
+      _mapController.fitCamera(
+        CameraFit.bounds(
+          bounds: LatLngBounds.fromPoints([start, end]),
+          padding: const EdgeInsets.all(50),
+        ),
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Ruta trazada: ${distance.toStringAsFixed(1)} km'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      setState(() {
+        _isLoadingRoute = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al calcular ruta: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -185,76 +272,10 @@ class _MapPageState extends State<MapPage> {
   }
 
   Future<void> _exportToExcel() async {
-    try {
-      StringBuffer csvContent = StringBuffer();
-      csvContent.writeln(
-        'Nombre Común,Nombre Científico,Especie,Descripción,Latitud,Longitud,Estado Extinción,Hábitat',
-      );
-
-      for (var avistamiento in _filteredAvistamientos) {
-        csvContent.writeln(
-          '${avistamiento.nombreComun},${avistamiento.nombreCientifico},${avistamiento.especie},${avistamiento.descripcion},${avistamiento.ubicacion.latitud},${avistamiento.ubicacion.longitud},${avistamiento.estadoExtincion},${avistamiento.habitat.nombreHabitat}',
-        );
-      }
-
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Exportar Datos'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Se exportarán ${_filteredAvistamientos.length} registros'),
-              const SizedBox(height: 16),
-              const Text(
-                'Contenido CSV:',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              Container(
-                height: 200,
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(8),
-                  child: Text(
-                    csvContent.toString(),
-                    style: const TextStyle(fontSize: 12, fontFamily: 'Courier'),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cerrar'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Datos exportados exitosamente'),
-                  ),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color.fromARGB(255, 188, 255, 247),
-              ),
-              child: const Text('Descargar CSV'),
-            ),
-          ],
-        ),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error al exportar: $e')));
-    }
+    showDialog(
+      context: context,
+      builder: (context) => ExportDialog(avistamientos: _filteredAvistamientos),
+    );
   }
 
   List<Marker> _buildMarkers() {
@@ -393,7 +414,36 @@ class _MapPageState extends State<MapPage> {
     }
 
     for (var avistamiento in _filteredAvistamientos) {
-      if (avistamiento.estadoExtincion.toLowerCase() == 'en peligro') {
+      final estado = avistamiento.estadoExtincion.toLowerCase();
+      if (estado == 'preocupación menor') {
+        circles.add(
+          CircleMarker(
+            point: LatLng(
+              avistamiento.ubicacion.latitud,
+              avistamiento.ubicacion.longitud,
+            ),
+            radius: 500,
+            useRadiusInMeter: true,
+            color: Colors.green.withOpacity(0.15),
+            borderColor: Colors.green.withOpacity(0.6),
+            borderStrokeWidth: 3,
+          ),
+        );
+      } else if (estado == 'vulnerable') {
+        circles.add(
+          CircleMarker(
+            point: LatLng(
+              avistamiento.ubicacion.latitud,
+              avistamiento.ubicacion.longitud,
+            ),
+            radius: 500,
+            useRadiusInMeter: true,
+            color: Colors.yellow.withOpacity(0.15),
+            borderColor: Colors.yellow.withOpacity(0.6),
+            borderStrokeWidth: 3,
+          ),
+        );
+      } else if (estado == 'en peligro') {
         circles.add(
           CircleMarker(
             point: LatLng(
@@ -404,6 +454,34 @@ class _MapPageState extends State<MapPage> {
             useRadiusInMeter: true,
             color: Colors.orange.withOpacity(0.15),
             borderColor: Colors.orange.withOpacity(0.6),
+            borderStrokeWidth: 3,
+          ),
+        );
+      } else if (estado == 'en peligro crítico') {
+        circles.add(
+          CircleMarker(
+            point: LatLng(
+              avistamiento.ubicacion.latitud,
+              avistamiento.ubicacion.longitud,
+            ),
+            radius: 500,
+            useRadiusInMeter: true,
+            color: Colors.red.withOpacity(0.15),
+            borderColor: Colors.red.withOpacity(0.6),
+            borderStrokeWidth: 3,
+          ),
+        );
+      } else if (estado == 'extinto') {
+        circles.add(
+          CircleMarker(
+            point: LatLng(
+              avistamiento.ubicacion.latitud,
+              avistamiento.ubicacion.longitud,
+            ),
+            radius: 500,
+            useRadiusInMeter: true,
+            color: Colors.black.withOpacity(0.15),
+            borderColor: Colors.black.withOpacity(0.6),
             borderStrokeWidth: 3,
           ),
         );
@@ -466,9 +544,24 @@ class _MapPageState extends State<MapPage> {
                     right: 0,
                     child: AvistamientoDetailCard(
                       avistamiento: _selectedAvistamiento!,
+                      userPosition: _currentPosition != null
+                          ? Position(
+                              latitude: _currentPosition!.latitude,
+                              longitude: _currentPosition!.longitude,
+                              timestamp: DateTime.now(),
+                              accuracy: 0,
+                              altitude: 0,
+                              altitudeAccuracy: 0,
+                              heading: 0,
+                              headingAccuracy: 0,
+                              speed: 0,
+                              speedAccuracy: 0,
+                            )
+                          : null,
                       onClose: () {
                         setState(() {
                           _selectedAvistamiento = null;
+                          _routePoints = []; // Limpiar ruta
                         });
                       },
                       onViewDetails: () {
@@ -482,6 +575,9 @@ class _MapPageState extends State<MapPage> {
                             ),
                           ),
                         );
+                      },
+                      onShowRoute: () {
+                        _showRouteToAvistamiento(_selectedAvistamiento!);
                       },
                     ),
                   ),
@@ -647,6 +743,7 @@ class _MapPageState extends State<MapPage> {
         onTap: (_, __) {
           setState(() {
             _selectedAvistamiento = null;
+            _routePoints = []; // Limpiar ruta al tocar el mapa
           });
         },
       ),
@@ -656,7 +753,54 @@ class _MapPageState extends State<MapPage> {
           userAgentPackageName: 'com.example.terrascope',
         ),
         CircleLayer(circles: _buildCircles()),
+
+        // AGREGAR ESTA CAPA PARA LA RUTA
+        if (_routePoints.isNotEmpty)
+          PolylineLayer(
+            polylines: [
+              Polyline(
+                points: _routePoints,
+                strokeWidth: 4.0,
+                color: const Color(0xFF2E7D32),
+                borderStrokeWidth: 2.0,
+                borderColor: Colors.white,
+              ),
+            ],
+          ),
+
         MarkerLayer(markers: _buildMarkers()),
+
+        // Indicador de carga de ruta
+        if (_isLoadingRoute)
+          Positioned(
+            top: 16,
+            right: 16,
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 4,
+                  ),
+                ],
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                  SizedBox(width: 8),
+                  Text('Calculando ruta...'),
+                ],
+              ),
+            ),
+          ),
       ],
     );
   }
