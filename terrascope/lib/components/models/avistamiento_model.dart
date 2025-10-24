@@ -4,6 +4,7 @@ import '../models/validacion_model.dart';
 
 class Avistamiento {
   final String id;
+  final String? idUsuario; 
   final String nombreComun;
   final String nombreCientifico;
   final String especie;
@@ -21,6 +22,7 @@ class Avistamiento {
 
   Avistamiento({
     required this.id,
+    this.idUsuario, 
     required this.nombreComun,
     required this.nombreCientifico,
     required this.especie,
@@ -35,11 +37,12 @@ class Avistamiento {
     required this.tipo,
     required this.nombreUsuario,
     Validacion? validacion,
-  }) : this.validacion = validacion ?? Validacion();
+  }) : validacion = validacion ?? Validacion();
 
   factory Avistamiento.fromJson(Map<String, dynamic> json) {
     return Avistamiento(
       id: json['_id'] ?? '',
+      idUsuario: json['id_usuario'], 
       nombreComun: json['nombre_comun'] ?? '',
       nombreCientifico: json['nombre_cientifico'] ?? '',
       especie: json['especie'] ?? '',
@@ -51,9 +54,8 @@ class Avistamiento {
       comportamiento: json['comportamiento'] ?? '',
       estadoExtincion: json['estado_extincion'] ?? '',
       estadoEspecimen: json['estado_especimen'] ?? '',
-      habitat: Habitat.fromJson(json['habitat'] ?? {}), // 👈 corregido
-      comentarios:
-          (json['comentarios'] as List?)
+      habitat: Habitat.fromJson(json['habitat'] ?? {}),
+      comentarios: (json['comentarios'] as List?)
               ?.map((c) => Comentario.fromJson(c))
               .toList() ??
           [],
@@ -64,6 +66,7 @@ class Avistamiento {
   Map<String, dynamic> toJson() {
     return {
       '_id': id,
+      'id_usuario': idUsuario, 
       'nombre_comun': nombreComun,
       'nombre_cientifico': nombreCientifico,
       'especie': especie,
@@ -83,7 +86,7 @@ class Avistamiento {
 
   @override
   String toString() {
-    return 'Avistamiento(id: $id, nombre: $nombreComun, especie: $especie)';
+    return 'Avistamiento(id: $id, usuario: $nombreUsuario, especie: $especie)';
   }
 }
 
@@ -106,4 +109,34 @@ class Ubicacion {
 
   @override
   String toString() => 'Ubicacion(lat: $latitud, lng: $longitud)';
+}
+
+class ZonaFrecuente {
+  final double lat;
+  final double lng;
+  final String especie;
+  final int count;
+
+  ZonaFrecuente({
+    required this.lat,
+    required this.lng,
+    required this.especie,
+    required this.count,
+  });
+
+  factory ZonaFrecuente.fromJson(Map<String, dynamic> json) {
+    return ZonaFrecuente(
+      lat: (json['lat'] ?? 0).toDouble(),
+      lng: (json['lng'] ?? 0).toDouble(),
+      especie: json['especie'] ?? '',
+      count: json['count'] ?? 0,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {'lat': lat, 'lng': lng, 'especie': especie, 'count': count};
+  }
+
+  @override
+  String toString() => 'ZonaFrecuente($especie: $count avistamientos)';
 }

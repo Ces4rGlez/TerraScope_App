@@ -30,6 +30,98 @@ class FaunaFloraService {
     }
   }
 
+  /// 🔹 Votar por un avistamiento (comunidad)
+  Future<void> votarAvistamiento(
+    String idAvistamiento,
+    String idUsuario,
+  ) async {
+    final url = Uri.parse('$baseUrl/fauna-flora/$idAvistamiento/votar');
+
+    try {
+      print("📡 Enviando voto comunidad → $url");
+      final response = await http.put(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'id_usuario': idUsuario}),
+      );
+
+      print("📬 Respuesta voto: [${response.statusCode}] ${response.body}");
+
+      if (response.statusCode != 200) {
+        throw Exception('Error al votar: ${response.statusCode}');
+      }
+    } catch (e) {
+      print("❌ Error en votarAvistamiento: $e");
+      rethrow;
+    }
+  }
+
+  /// 🔹 Validar avistamiento como experto
+  Future<void> validarComoExperto(
+    String idAvistamiento,
+    String idUsuario,
+    String rol,
+  ) async {
+    final url = Uri.parse(
+      '$baseUrl/fauna-flora/$idAvistamiento/validar-experto',
+    );
+
+    try {
+      print("📡 Enviando validación experto → $url");
+      final response = await http.put(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'id_usuario': idUsuario, 'rol': rol}),
+      );
+
+      print(
+        "📬 Respuesta validación experto: [${response.statusCode}] ${response.body}",
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception(
+          'Error al validar como experto: ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      print("❌ Error en validarComoExperto: $e");
+      rethrow;
+    }
+  }
+
+  /// 🔹 Obtener estado de validación (incluye yaVoto y usuarios_validadores)
+  Future<Map<String, dynamic>?> getEstadoValidacion(
+    String idAvistamiento,
+    String idUsuario,
+  ) async {
+    final url = Uri.parse(
+      '$baseUrl/fauna-flora/$idAvistamiento/validacion?userId=$idUsuario',
+    );
+
+    try {
+      print("📡 GET estado validación → $url");
+
+      final response = await http.get(
+        url,
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      print(
+        "📬 Respuesta estado validación [${response.statusCode}]: ${response.body}",
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body) as Map<String, dynamic>;
+        return data;
+      } else {
+        throw Exception('Error al obtener estado: ${response.statusCode}');
+      }
+    } catch (e) {
+      print("❌ Error en getEstadoValidacion: $e");
+      rethrow;
+    }
+  }
+
   /// Obtener todos los avistamientos
   Future<List<Avistamiento>> getAllFaunaFlora() async {
     try {
