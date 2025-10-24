@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:terrascope/components/ia/ia_registro.dart';
 import 'package:terrascope/services/ia_service.dart';
 import '../../services/camera_service.dart';
 import '../../services/fauna_flora_service.dart';
@@ -30,6 +31,7 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
   final HabitatService _habitatService = HabitatService(
     baseUrl: ApiConfig.baseUrl,
   );
+  final IARegistro _iaRegistro = IARegistro();
 
   // Controladores de texto
   final TextEditingController _nombreComunController = TextEditingController();
@@ -56,7 +58,6 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
   Habitat? _selectedHabitat;
   bool _cargando = false;
   Map<String, dynamic>? _resultadoIA;
-
 
   final List<String> _comportamientosComunes = [
     'Agresivo',
@@ -125,172 +126,997 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
   }
 
   Future<void> _takePhoto() async {
-  try {
-    final File? photo = await _cameraService.takePhoto();
-    if (photo != null) {
-      final String base64 = await _cameraService.convertImageToBase64(photo);
-      if (mounted) {
-        setState(() {
-          _imageFile = photo;
-          _imageBase64 = base64;
-        });
+    try {
+      final File? photo = await _cameraService.takePhoto();
+      if (photo != null) {
+        final String base64 = await _cameraService.convertImageToBase64(photo);
+        if (mounted) {
+          setState(() {
+            _imageFile = photo;
+            _imageBase64 = base64;
+          });
+        }
       }
-
+    } catch (e) {
+      _showError('Error al tomar foto: $e');
     }
-  } catch (e) {
-    _showError('Error al tomar foto: $e');
   }
-}
 
-Future<void> _pickImageFromGallery() async {
-  try {
-    final File? image = await _cameraService.pickImageFromGallery();
-    if (image != null) {
-      final String base64 = await _cameraService.convertImageToBase64(image);
-      if (mounted) {
-        setState(() {
-          _imageFile = image;
-          _imageBase64 = base64;
-        });
+  Future<void> _pickImageFromGallery() async {
+    try {
+      final File? image = await _cameraService.pickImageFromGallery();
+      if (image != null) {
+        final String base64 = await _cameraService.convertImageToBase64(image);
+        if (mounted) {
+          setState(() {
+            _imageFile = image;
+            _imageBase64 = base64;
+          });
+        }
+      }
+    } catch (e) {
+      _showError('Error al seleccionar imagen: $e');
+    }
+  }
+
+  Future<void> _showSpeciesModal() async {
+    if (_resultadoIA == null) return;
+
+    final nombreComunIA = _resultadoIA!['nombre_comun'] ?? '';
+    final nombreCientificoIA = _resultadoIA!['nombre_cientifico'] ?? '';
+    final descripcionIA = _resultadoIA!['descripcion'] ?? '';
+    final nivelConfianza = _resultadoIA!['nivel_confianza'] ?? '';
+
+    bool isUnknown =
+        nombreComunIA.toLowerCase() == 'desconocido' ||
+        nombreCientificoIA.toLowerCase() == 'desconocido';
+
+    double getConfidencePercent(String nivel) {
+      switch (nivel.toLowerCase()) {
+        case 'alto':
+          return 1.0; // 100%
+        case 'medio':
+          return 0.66; // 66%
+        case 'bajo':
+          return 0.33; // 33%
+        default:
+          return 0.0;
       }
     }
-  } catch (e) {
-    _showError('Error al seleccionar imagen: $e');
-  }
-}
 
-Future<void> _showSpeciesModal() async {
-  if (_resultadoIA == null) return;
-
-  final nombreComunIA = _resultadoIA!['nombre_comun'] ?? '';
-  final nombreCientificoIA = _resultadoIA!['nombre_cientifico'] ?? '';
-  final descripcionIA = _resultadoIA!['descripcion'] ?? '';
-  final nivelConfianza = _resultadoIA!['nivel_confianza'] ?? '';
-
-  bool isUnknown = nombreComunIA.toLowerCase() == 'desconocido' ||
-                   nombreCientificoIA.toLowerCase() == 'desconocido';
-
-  double getConfidencePercent(String nivel) {
-    switch (nivel.toLowerCase()) {
-      case 'alto':
-        return 1.0; // 100%
-      case 'medio':
-        return 0.66; // 66%
-      case 'bajo':
-        return 0.33; // 33%
-      default:
-        return 0.0;
+    Color getColorForConfidence(String nivel) {
+      switch (nivel.toLowerCase()) {
+        case 'alto':
+          return const Color(0xFF4CAF50);
+        case 'medio':
+          return const Color(0xFFFFA726);
+        case 'bajo':
+          return const Color(0xFFEF5350);
+        default:
+          return Colors.grey;
+      }
     }
-  }
 
-  Color getColorForConfidence(String nivel) {
-    switch (nivel.toLowerCase()) {
-      case 'alto':
-        return Colors.green;
-      case 'medio':
-        return Colors.yellow[700]!;
-      case 'bajo':
-        return Colors.red;
-      default:
-        return Colors.grey;
-    }
-  }
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) {
+        final percent = getConfidencePercent(nivelConfianza);
+        final color = getColorForConfidence(nivelConfianza);
 
-  showDialog(
-    context: context,
-    builder: (context) {
-      final percent = getConfidencePercent(nivelConfianza);
-      final color = getColorForConfidence(nivelConfianza);
-
-      return AlertDialog(
-        title: const Text('Información del Avistamiento'),
-        content: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (nombreComunIA.isNotEmpty)
-                Text('Nombre Común: $nombreComunIA', style: const TextStyle(fontWeight: FontWeight.bold)),
-              if (nombreCientificoIA.isNotEmpty)
-                Text('Nombre Científico: $nombreCientificoIA', style: const TextStyle(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
-              if (descripcionIA.isNotEmpty)
-                Text('Descripción: $descripcionIA'),
-              const SizedBox(height: 16),
-              if (nivelConfianza.isNotEmpty) ...[
-                const Text('Nivel de Confianza:', style: TextStyle(fontWeight: FontWeight.bold)),
-                const SizedBox(height: 4),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: LinearProgressIndicator(
-                    value: percent,
-                    color: color,
-                    backgroundColor: Colors.grey[300],
-                    minHeight: 12,
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(28),
+          ),
+          elevation: 0,
+          backgroundColor: Colors.transparent,
+          child: Container(
+            constraints: const BoxConstraints(maxHeight: 650),
+            decoration: BoxDecoration(
+              color: const Color(0xFFE0E0E0),
+              borderRadius: BorderRadius.circular(28),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.3),
+                  blurRadius: 30,
+                  offset: const Offset(0, 15),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Header con ícono
+                Container(
+                  padding: const EdgeInsets.all(28),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF5C6445),
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(28),
+                      topRight: Radius.circular(28),
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE0E0E0).withOpacity(0.2),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.pets,
+                          color: Color(0xFFE0E0E0),
+                          size: 48,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Información del Avistamiento',
+                        style: TextStyle(
+                          color: Color(0xFFE0E0E0),
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Identificación por IA',
+                        style: TextStyle(
+                          color: const Color(0xFFE0E0E0).withOpacity(0.8),
+                          fontSize: 14,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  nivelConfianza,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: color,
+
+                // Contenido
+                Flexible(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Nombre Común
+                        if (nombreComunIA.isNotEmpty) ...[
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: const Color(0xFF5C6445).withOpacity(0.2),
+                                width: 1.5,
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: const Color(
+                                          0xFF5C6445,
+                                        ).withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: const Icon(
+                                        Icons.label_outline,
+                                        color: Color(0xFF5C6445),
+                                        size: 20,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Text(
+                                      'Nombre Común',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: const Color(
+                                          0xFF224275,
+                                        ).withOpacity(0.7),
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  nombreComunIA,
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    color: Color(0xFF0F1D33),
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+
+                        // Nombre Científico
+                        if (nombreCientificoIA.isNotEmpty) ...[
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: const Color(0xFF5C6445).withOpacity(0.2),
+                                width: 1.5,
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: const Color(
+                                          0xFF5C6445,
+                                        ).withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: const Icon(
+                                        Icons.science_outlined,
+                                        color: Color(0xFF5C6445),
+                                        size: 20,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Text(
+                                      'Nombre Científico',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: const Color(
+                                          0xFF224275,
+                                        ).withOpacity(0.7),
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  nombreCientificoIA,
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    color: Color(0xFF0F1D33),
+                                    fontWeight: FontWeight.bold,
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+
+                        // Descripción
+                        if (descripcionIA.isNotEmpty) ...[
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: const Color(0xFF5C6445).withOpacity(0.2),
+                                width: 1.5,
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: const Color(
+                                          0xFF5C6445,
+                                        ).withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: const Icon(
+                                        Icons.description_outlined,
+                                        color: Color(0xFF5C6445),
+                                        size: 20,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Text(
+                                      'Descripción',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: const Color(
+                                          0xFF224275,
+                                        ).withOpacity(0.7),
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  descripcionIA,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    color: Color(0xFF0F1D33),
+                                    height: 1.5,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+
+                        // Nivel de Confianza
+                        if (nivelConfianza.isNotEmpty) ...[
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: color.withOpacity(0.3),
+                                width: 1.5,
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(6),
+                                          decoration: BoxDecoration(
+                                            color: color.withOpacity(0.1),
+                                            borderRadius: BorderRadius.circular(
+                                              8,
+                                            ),
+                                          ),
+                                          child: Icon(
+                                            Icons.analytics_outlined,
+                                            color: color,
+                                            size: 18,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Text(
+                                          'Nivel de Confianza',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: const Color(
+                                              0xFF224275,
+                                            ).withOpacity(0.7),
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    Text(
+                                      '${(percent * 100).toInt()}%',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: color,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 10),
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: LinearProgressIndicator(
+                                    value: percent,
+                                    color: color,
+                                    backgroundColor: color.withOpacity(0.2),
+                                    minHeight: 12,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(
+                                    nivelConfianza.toUpperCase(),
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: color,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+
+                        // Advertencia si es desconocido
+                        if (isUnknown) ...[
+                          const SizedBox(height: 16),
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFFA726).withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: const Color(0xFFFFA726).withOpacity(0.3),
+                                width: 1,
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.info_outline,
+                                  color: Color(0xFFFFA726),
+                                  size: 24,
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    'No se pudo identificar la especie. Completa los campos manualmente.',
+                                    style: TextStyle(
+                                      color: Colors.orange[900],
+                                      fontSize: 13,
+                                      height: 1.4,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+
+                // Botones de acción
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            side: BorderSide(
+                              color: Colors.grey[400]!,
+                              width: 1.5,
+                            ),
+                          ),
+                          child: const Text(
+                            'Cerrar',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF0F1D33),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        flex: 2,
+                        child: ElevatedButton(
+                          onPressed: isUnknown
+                              ? null
+                              : () {
+                                  setState(() {
+                                    _nombreComunController.text = nombreComunIA;
+                                    _nombreCientificoController.text =
+                                        nombreCientificoIA;
+                                  });
+                                  Navigator.of(context).pop();
+                                },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF0F1D33),
+                            foregroundColor: const Color(0xFFE0E0E0),
+                            disabledBackgroundColor: Colors.grey[300],
+                            disabledForegroundColor: Colors.grey[600],
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.auto_fix_high, size: 20),
+                              SizedBox(width: 8),
+                              Text(
+                                'Autocompletar',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
-            ],
+            ),
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cerrar'),
-          ),
-          ElevatedButton(
-            onPressed: isUnknown
-                ? null // deshabilita el botón si es "Desconocido"
-                : () {
-                    setState(() {
-                      _nombreComunController.text = nombreComunIA;
-                      _nombreCientificoController.text = nombreCientificoIA;
-                    });
-                    Navigator.of(context).pop();
-                  },
-            child: const Text('Autocompletar campos'),
-          ),
-        ],
+        );
+      },
+    );
+  }
+
+  /// 🔍 Llamada al servicio de IA
+  Future<void> _identificarEspecie(String imagenBase64) async {
+    try {
+      setState(() => _cargando = true);
+
+      final resultado = await IAService.identificarEspecie(imagenBase64);
+
+      if (mounted) {
+        setState(() {
+          _resultadoIA = resultado;
+        });
+        _showSpeciesModal();
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Identificación completada')),
       );
-    },
-  );
-}
+    } catch (e) {
+      _showError('Error al identificar: $e');
+    } finally {
+      if (mounted) setState(() => _cargando = false);
+    }
+  }
 
+  Future<void> _validarRegistro() async {
+    // Verificar campos obligatorios
+    print('🔹 Datos a validar:');
+    print('  - Nombre Común: ${_nombreComunController.text}');
+    print('  - Nombre Científico: ${_nombreCientificoController.text}');
+    print('  - Especie: $_especieSeleccionada');
+    print('  - Descripción: ${_descripcionController.text}');
+    print(
+      '  - Hábitat: ${_selectedHabitat != null ? _selectedHabitat!.nombreHabitat : "No seleccionado"}',
+    );
 
-
-
-/// 🔍 Llamada al servicio de IA
-Future<void> _identificarEspecie(String imagenBase64) async {
-  try {
-    setState(() => _cargando = true);
-
-    final resultado = await IAService.identificarEspecie(imagenBase64);
-
-    if (mounted) {
-      setState(() {
-        _resultadoIA = resultado;
-      });
-      _showSpeciesModal();
+    if (_nombreComunController.text.isEmpty ||
+        _nombreCientificoController.text.isEmpty ||
+        _especieSeleccionada.isEmpty ||
+        _descripcionController.text.isEmpty ||
+        _selectedHabitat == null) {
+      _showError('Faltan campos obligatorios para la validación contextual.');
+      return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Identificación completada')),
-      
-    );
-  } catch (e) {
-    _showError('Error al identificar: $e');
-  } finally {
-    if (mounted) setState(() => _cargando = false);
-  }
-}
+    setState(() => _cargando = true);
 
+    try {
+      await _iaRegistro.validarRegistro(
+        nombreComun: _nombreComunController.text,
+        nombreCientifico: _nombreCientificoController.text,
+        especie: _especieSeleccionada,
+        descripcion: _descripcionController.text,
+        tipo: _tipo,
+        comportamiento: _comportamientoController.text,
+        estadoExtincion: _estadoExtincion,
+        habitat: _selectedHabitat != null
+            ? {
+                'idHabitat': _selectedHabitat!.idHabitat,
+                'nombre_habitat': _selectedHabitat!.nombreHabitat,
+              }
+            : {},
+      );
+
+      if (_iaRegistro.error != null) {
+        _showError(_iaRegistro.error!);
+        return;
+      }
+
+      if (mounted) {
+        setState(() {
+          _resultadoIA = _iaRegistro.validacionResultado;
+        });
+      }
+
+      // Abrir modal con la información de validación
+      if (_resultadoIA != null) {
+        final esCoherente = _resultadoIA!['es_coherente'] ?? false;
+        final errores = _resultadoIA!['errores_detectados'] ?? [];
+        final sugerencia = _resultadoIA!['sugerencia'] ?? '';
+
+        await showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) {
+            return Dialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(28),
+              ),
+              elevation: 0,
+              backgroundColor: Colors.transparent,
+              child: Container(
+                constraints: const BoxConstraints(maxHeight: 600),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE0E0E0),
+                  borderRadius: BorderRadius.circular(28),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.3),
+                      blurRadius: 30,
+                      offset: const Offset(0, 15),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Header con el color de TerraScope
+                    Container(
+                      padding: const EdgeInsets.all(28),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF5C6445),
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(28),
+                          topRight: Radius.circular(28),
+                        ),
+                      ),
+                      child: Column(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFE0E0E0).withOpacity(0.2),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              esCoherente
+                                  ? Icons.check_circle_outline
+                                  : Icons.warning_amber_rounded,
+                              color: const Color(0xFFE0E0E0),
+                              size: 52,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            esCoherente
+                                ? '¡Validación Exitosa!'
+                                : 'Validación con Observaciones',
+                            style: const TextStyle(
+                              color: Color(0xFFE0E0E0),
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            esCoherente
+                                ? 'Los datos ingresados son coherentes'
+                                : 'Se detectaron algunas inconsistencias',
+                            style: TextStyle(
+                              color: const Color(0xFFE0E0E0).withOpacity(0.8),
+                              fontSize: 14,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Contenido con scroll
+                    Flexible(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.all(24),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Estado de coherencia
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: const Color(
+                                    0xFF5C6445,
+                                  ).withOpacity(0.2),
+                                  width: 1.5,
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      color: const Color(
+                                        0xFF5C6445,
+                                      ).withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Icon(
+                                      esCoherente
+                                          ? Icons.verified
+                                          : Icons.priority_high,
+                                      color: const Color(0xFF5C6445),
+                                      size: 24,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Estado de Coherencia',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: const Color(
+                                              0xFF224275,
+                                            ).withOpacity(0.7),
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          esCoherente
+                                              ? 'Datos coherentes ✓'
+                                              : 'Requiere revisión',
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            color: Color(0xFF0F1D33),
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+
+                            // Errores detectados
+                            if (errores.isNotEmpty) ...[
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(6),
+                                    decoration: BoxDecoration(
+                                      color: const Color(
+                                        0xFFEF5350,
+                                      ).withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: const Icon(
+                                      Icons.error_outline,
+                                      color: Color(0xFFEF5350),
+                                      size: 20,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  const Text(
+                                    'Incoherencias Detectadas',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF0F1D33),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: const Color(
+                                      0xFFEF5350,
+                                    ).withOpacity(0.3),
+                                    width: 1.5,
+                                  ),
+                                ),
+                                padding: const EdgeInsets.all(16),
+                                child: Column(
+                                  children: errores.map<Widget>((error) {
+                                    return Padding(
+                                      padding: const EdgeInsets.only(
+                                        bottom: 12,
+                                      ),
+                                      child: Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          const Icon(
+                                            Icons.cancel_rounded,
+                                            color: Color(0xFFEF5350),
+                                            size: 20,
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: Text(
+                                              error.toString(),
+                                              style: const TextStyle(
+                                                color: Color(0xFF0F1D33),
+                                                fontSize: 14,
+                                                height: 1.5,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  }).toList(),
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+                            ],
+
+                            // Sugerencia de IA
+                            if (sugerencia.isNotEmpty) ...[
+                              Row(
+                                children: [
+                                  const Icon(
+                                    Icons.lightbulb_outline,
+                                    color: Color(0xFF5C6445),
+                                    size: 22,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  const Text(
+                                    'Sugerencia de IA',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF5C6445),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              Container(
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      const Color(0xFF5C6445).withOpacity(0.1),
+                                      const Color(0xFF4A5237).withOpacity(0.05),
+                                    ],
+                                  ),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: const Color(
+                                      0xFF5C6445,
+                                    ).withOpacity(0.3),
+                                    width: 1,
+                                  ),
+                                ),
+                                padding: const EdgeInsets.all(16),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Icon(
+                                      Icons.auto_awesome,
+                                      color: Color(0xFF5C6445),
+                                      size: 24,
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        sugerencia,
+                                        style: const TextStyle(
+                                          color: Color(0xFF0F1D33),
+                                          fontSize: 14,
+                                          height: 1.5,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    // Botón único de cerrar
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                      child: SizedBox(
+                        width: double.infinity,
+                        height: 56,
+                        child: ElevatedButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF0F1D33),
+                            foregroundColor: const Color(0xFFE0E0E0),
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                esCoherente ? 'Continuar' : 'Entendido',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Icon(
+                                esCoherente ? Icons.arrow_forward : Icons.check,
+                                size: 20,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+
+        // SnackBar después del modal
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  Icon(
+                    esCoherente ? Icons.check_circle : Icons.info_outline,
+                    color: Colors.white,
+                  ),
+                  const SizedBox(width: 12),
+                  const Text('Validación completada'),
+                ],
+              ),
+              backgroundColor: esCoherente
+                  ? const Color(0xFF5C6445)
+                  : const Color(0xFFF57C00),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      _showError('Error en la validación: $e');
+    } finally {
+      if (mounted) setState(() => _cargando = false);
+    }
+  }
 
   Future<void> _getCurrentLocation() async {
     if (!mounted) return;
@@ -622,30 +1448,35 @@ Future<void> _identificarEspecie(String imagenBase64) async {
             ),
             const SizedBox(height: 24),
             // Botón para identificar especie
-if (_imageBase64 != null)
-  SizedBox(
-    width: double.infinity,
-    height: 50,
-    child: ElevatedButton.icon(
-      onPressed: _cargando ? null : () => _identificarEspecie(_imageBase64!),
-      icon: _cargando
-          ? const SizedBox(
-              width: 20,
-              height: 20,
-              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-            )
-          : const Icon(Icons.search),
-      label: const Text('Identificar Especie'),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFF5C6445),
-        foregroundColor: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-      ),
-    ),
-  ),
-const SizedBox(height: 24),
+            if (_imageBase64 != null)
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton.icon(
+                  onPressed: _cargando
+                      ? null
+                      : () => _identificarEspecie(_imageBase64!),
+                  icon: _cargando
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Icon(Icons.search),
+                  label: const Text('Identificar Especie'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF5C6445),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+            const SizedBox(height: 24),
 
             // Tipo (Fauna/Flora)
             const Text(
@@ -908,26 +1739,10 @@ const SizedBox(height: 24),
                     items: _habitats.map((habitat) {
                       return DropdownMenuItem<Habitat>(
                         value: habitat,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              habitat.nombreHabitat,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Text(
-                              habitat.descripcionHabitat,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey[600],
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
+                        child: Text(
+                          habitat.nombreHabitat,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       );
                     }).toList(),
@@ -942,28 +1757,84 @@ const SizedBox(height: 24),
 
             const SizedBox(height: 32),
 
+            // Botón Validar Registro
+            if (_imageBase64 != null)
+              SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: ElevatedButton.icon(
+                  onPressed: _cargando ? null : _validarRegistro,
+                  icon: _cargando
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.5,
+                          ),
+                        )
+                      : const Icon(Icons.verified, size: 22),
+                  label: const Text(
+                    'Validar Registro',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(
+                      0xFF5C6445,
+                    ), // Verde TerraScope
+                    foregroundColor: const Color(0xFFE0E0E0),
+                    disabledBackgroundColor: Colors.grey[300],
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    shadowColor: const Color(0xFF5C6445).withOpacity(0.4),
+                  ),
+                ),
+              ),
+
+            const SizedBox(height: 16),
+
             // Botón Guardar
             SizedBox(
               width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
+              height: 56,
+              child: ElevatedButton.icon(
                 onPressed: _isSaving ? null : _saveAvistamiento,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF5C6445),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                icon: _isSaving
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2.5,
+                        ),
+                      )
+                    : const Icon(Icons.save_outlined, size: 22),
+                label: const Text(
+                  'Guardar Avistamiento',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
                   ),
                 ),
-                child: _isSaving
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text(
-                        'Guardar Avistamiento',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(
+                    0xFF0F1D33,
+                  ), // Azul oscuro TerraScope
+                  foregroundColor: const Color(0xFFE0E0E0),
+                  disabledBackgroundColor: Colors.grey[300],
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  shadowColor: const Color(0xFF0F1D33).withOpacity(0.4),
+                ),
               ),
             ),
             const SizedBox(height: 24),
