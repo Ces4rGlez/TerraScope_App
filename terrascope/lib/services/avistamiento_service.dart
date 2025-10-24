@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:terrascope/components/models/zona_frecuente.dart';
 import '../components/models/avistamiento_model.dart';
 import '../config/api_config.dart';
 
