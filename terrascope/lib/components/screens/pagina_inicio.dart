@@ -129,11 +129,6 @@ class _HomePageState extends State<HomePage> {
                   builder: (context) => const CreateAvistamientoScreen(),
                 ),
               );
-<<<<<<< HEAD
-=======
-
-              // Navegar a pantalla de crear avistamiento
->>>>>>> origin/main
 
               if (result == true) {
                 _cargarAvistamientos();
