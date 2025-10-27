@@ -170,11 +170,8 @@ class _MapPageState extends State<MapPage> {
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('No se pudo obtener la ubicación: $e'),
-            action: SnackBarAction(
-              label: 'Reintentar',
-              onPressed: _getCurrentLocation,
-            ),
+            content: Text('Ubicación obtenida correctamente'),
+            
           ),
         );
       }
