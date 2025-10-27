@@ -401,7 +401,7 @@ class _MapPageState extends State<MapPage> {
       circles.add(
         CircleMarker(
           point: LatLng(zona.lat, zona.lng),
-          radius: 300,
+          radius: 600,
           useRadiusInMeter: true,
           color: Colors.red.withOpacity(0.2),
           borderColor: Colors.red.withOpacity(0.5),

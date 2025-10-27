@@ -78,6 +78,16 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
     'Otro',
   ];
 
+  // 🆕 Lista de especies para Flora
+  final List<String> _especiesFlora = [
+    'Planta',
+    'Árbol',
+    'Arbusto',
+    'Hierba',
+    'Hongo',
+    'Otro',
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -111,6 +121,28 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
         _showError('Error al cargar hábitats: $e');
       }
     }
+  }
+
+  // 🆕 Método para actualizar campos cuando cambia el tipo
+  void _actualizarCamposSegunTipo(String nuevoTipo) {
+    setState(() {
+      _tipo = nuevoTipo;
+      
+      if (nuevoTipo == 'Flora') {
+        // Establecer valores por defecto para Flora
+        _especieSeleccionada = 'Planta';
+        _comportamientoController.text = 'No aplica';
+        _estadoEspecimenController.text = 'Observado';
+      } else {
+        // Restaurar valores por defecto para Fauna
+        // Verificar si el valor actual es válido en Fauna, si no, usar Mamífero
+        if (!_especiesDisponibles.contains(_especieSeleccionada)) {
+          _especieSeleccionada = 'Mamífero';
+        }
+        _comportamientoController.text = '';
+        _estadoEspecimenController.text = '';
+      }
+    });
   }
 
   @override
@@ -174,11 +206,11 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
     double getConfidencePercent(String nivel) {
       switch (nivel.toLowerCase()) {
         case 'alto':
-          return 1.0; // 100%
+          return 1.0;
         case 'medio':
-          return 0.66; // 66%
+          return 0.66;
         case 'bajo':
-          return 0.33; // 33%
+          return 0.33;
         default:
           return 0.0;
       }
@@ -226,7 +258,6 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Header con ícono
                 Container(
                   padding: const EdgeInsets.all(28),
                   decoration: const BoxDecoration(
@@ -272,15 +303,12 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
                     ],
                   ),
                 ),
-
-                // Contenido
                 Flexible(
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.all(24),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Nombre Común
                         if (nombreComunIA.isNotEmpty) ...[
                           Container(
                             width: double.infinity,
@@ -339,8 +367,6 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
                           ),
                           const SizedBox(height: 16),
                         ],
-
-                        // Nombre Científico
                         if (nombreCientificoIA.isNotEmpty) ...[
                           Container(
                             width: double.infinity,
@@ -400,8 +426,6 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
                           ),
                           const SizedBox(height: 16),
                         ],
-
-                        // Descripción
                         if (descripcionIA.isNotEmpty) ...[
                           Container(
                             width: double.infinity,
@@ -460,8 +484,6 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
                           ),
                           const SizedBox(height: 16),
                         ],
-
-                        // Nivel de Confianza
                         if (nivelConfianza.isNotEmpty) ...[
                           Container(
                             width: double.infinity,
@@ -546,8 +568,6 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
                             ),
                           ),
                         ],
-
-                        // Advertencia si es desconocido
                         if (isUnknown) ...[
                           const SizedBox(height: 16),
                           Container(
@@ -586,8 +606,6 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
                     ),
                   ),
                 ),
-
-                // Botones de acción
                 Padding(
                   padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
                   child: Row(
@@ -667,7 +685,6 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
     );
   }
 
-  /// 🔍 Llamada al servicio de IA
   Future<void> _identificarEspecie(String imagenBase64) async {
     try {
       setState(() => _cargando = true);
@@ -692,7 +709,6 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
   }
 
   Future<void> _validarRegistro() async {
-    // Verificar campos obligatorios
     print('🔹 Datos a validar:');
     print('  - Nombre Común: ${_nombreComunController.text}');
     print('  - Nombre Científico: ${_nombreCientificoController.text}');
@@ -741,7 +757,6 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
         });
       }
 
-      // Abrir modal con la información de validación
       if (_resultadoIA != null) {
         final esCoherente = _resultadoIA!['es_coherente'] ?? false;
         final errores = _resultadoIA!['errores_detectados'] ?? [];
@@ -773,7 +788,6 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Header con el color de TerraScope
                     Container(
                       padding: const EdgeInsets.all(28),
                       decoration: const BoxDecoration(
@@ -825,15 +839,12 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
                         ],
                       ),
                     ),
-
-                    // Contenido con scroll
                     Flexible(
                       child: SingleChildScrollView(
                         padding: const EdgeInsets.all(24),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Estado de coherencia
                             Container(
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
@@ -898,8 +909,6 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
                               ),
                             ),
                             const SizedBox(height: 20),
-
-                            // Errores detectados
                             if (errores.isNotEmpty) ...[
                               Row(
                                 children: [
@@ -975,8 +984,6 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
                               ),
                               const SizedBox(height: 20),
                             ],
-
-                            // Sugerencia de IA
                             if (sugerencia.isNotEmpty) ...[
                               Row(
                                 children: [
@@ -1041,8 +1048,6 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
                         ),
                       ),
                     ),
-
-                    // Botón único de cerrar
                     Padding(
                       padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
                       child: SizedBox(
@@ -1086,7 +1091,6 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
           },
         );
 
-        // SnackBar después del modal
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -1126,7 +1130,6 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
     });
 
     try {
-      // Verificar si los servicios de ubicación están habilitados
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
         throw Exception(
@@ -1134,7 +1137,6 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
         );
       }
 
-      // Verificar permisos
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
@@ -1149,7 +1151,6 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
         );
       }
 
-      // Intentar obtener última ubicación conocida (más rápido)
       Position? lastPosition = await Geolocator.getLastKnownPosition();
 
       if (lastPosition != null) {
@@ -1173,7 +1174,6 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
         return;
       }
 
-      // Si no hay última ubicación, obtener la actual con timeout
       Position position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
         timeLimit: const Duration(seconds: 15),
@@ -1233,7 +1233,6 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
     });
 
     try {
-      // Obtener el nombre del usuario de la sesión
       final nombreUsuario = await _sessionService.getUserName();
 
       if (nombreUsuario == null) {
@@ -1270,7 +1269,6 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
         comentarios: [],
         tipo: _tipo,
         nombreUsuario: nombreUsuario,
-        // NO pasas validacion aquí, se inicializa automáticamente con valores por defecto
       );
 
       print('📤 Datos a enviar:');
@@ -1283,7 +1281,7 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
       );
       print(
         '  - Validación: ${avistamiento.validacion.estado}, votos: ${avistamiento.validacion.votosComunidad}',
-      ); // 👈 Opcional: para debug
+      );
 
       final jsonData = avistamiento.toJson();
       print('📋 JSON completo:');
@@ -1407,6 +1405,9 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
   }
 
   Widget _buildFormStep() {
+    // 🆕 Determinar si es Flora para deshabilitar campos
+    final bool esFlora = _tipo == 'Flora';
+    
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Form(
@@ -1414,7 +1415,6 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Imagen capturada
             Container(
               width: double.infinity,
               height: 200,
@@ -1447,7 +1447,6 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
               ),
             ),
             const SizedBox(height: 24),
-            // Botón para identificar especie
             if (_imageBase64 != null)
               SizedBox(
                 width: double.infinity,
@@ -1478,7 +1477,7 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
               ),
             const SizedBox(height: 24),
 
-            // Tipo (Fauna/Flora)
+            // Tipo (Fauna/Flora) - 🆕 Con callback actualizado
             const Text(
               'Tipo',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
@@ -1491,14 +1490,11 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
               ],
               selected: {_tipo},
               onSelectionChanged: (Set<String> newSelection) {
-                setState(() {
-                  _tipo = newSelection.first;
-                });
+                _actualizarCamposSegunTipo(newSelection.first);
               },
             ),
             const SizedBox(height: 16),
 
-            // Nombre Común
             _buildTextField(
               controller: _nombreComunController,
               label: 'Nombre Común',
@@ -1507,7 +1503,6 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
                   value?.isEmpty ?? true ? 'Campo requerido' : null,
             ),
 
-            // Nombre Científico
             _buildTextField(
               controller: _nombreCientificoController,
               label: 'Nombre Científico',
@@ -1516,7 +1511,6 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
                   value?.isEmpty ?? true ? 'Campo requerido' : null,
             ),
 
-            // Descripción
             _buildTextField(
               controller: _descripcionController,
               label: 'Descripción',
@@ -1526,7 +1520,7 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
                   value?.isEmpty ?? true ? 'Campo requerido' : null,
             ),
 
-            // Especie con dropdown y iconos
+            // 🆕 Especie - Cambia opciones según tipo
             const Text(
               'Especie',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
@@ -1539,9 +1533,10 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 filled: true,
-                fillColor: Colors.white,
+                fillColor: esFlora ? Colors.grey[200] : Colors.white,
               ),
-              items: _especiesDisponibles.map((especie) {
+              items: (esFlora ? _especiesFlora : _especiesDisponibles)
+                  .map((especie) {
                 return DropdownMenuItem<String>(
                   value: especie,
                   child: Row(
@@ -1563,7 +1558,7 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
                   ),
                 );
               }).toList(),
-              onChanged: (value) {
+              onChanged: esFlora ? null : (value) {
                 if (value != null) {
                   setState(() {
                     _especieSeleccionada = value;
@@ -1571,9 +1566,42 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
                 }
               },
             ),
+            
+            // 🆕 Mensaje informativo cuando es Flora
+            if (esFlora) ...[
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF5C6445).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: const Color(0xFF5C6445).withOpacity(0.3),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      color: const Color(0xFF5C6445),
+                      size: 20,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Los campos específicos de fauna se completarán automáticamente',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: const Color(0xFF5C6445),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             const SizedBox(height: 16),
 
-            // Ubicación
             const Text(
               'Ubicación',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
@@ -1615,37 +1643,52 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Comportamiento con dropdown
+            // 🆕 Comportamiento - Deshabilitado para Flora
             const Text(
               'Comportamiento',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
             const SizedBox(height: 8),
-            DropdownButtonFormField<String>(
-              value: _comportamientoController.text.isEmpty
-                  ? null
-                  : _comportamientoController.text,
-              decoration: InputDecoration(
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
+            if (esFlora)
+              // Campo de texto deshabilitado para Flora
+              TextFormField(
+                controller: _comportamientoController,
+                enabled: false,
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  filled: true,
+                  fillColor: Colors.grey[200],
+                  hintText: 'No aplica para flora',
                 ),
-                filled: true,
-                fillColor: Colors.white,
+              )
+            else
+              // Dropdown normal para Fauna
+              DropdownButtonFormField<String>(
+                value: _comportamientoController.text.isEmpty
+                    ? null
+                    : _comportamientoController.text,
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  filled: true,
+                  fillColor: Colors.white,
+                ),
+                hint: const Text('Selecciona un comportamiento'),
+                items: _comportamientosComunes
+                    .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                    .toList(),
+                onChanged: (value) {
+                  if (value != null) {
+                    _comportamientoController.text = value;
+                  }
+                },
+                validator: (value) => value == null ? 'Campo requerido' : null,
               ),
-              hint: const Text('Selecciona un comportamiento'),
-              items: _comportamientosComunes
-                  .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                  .toList(),
-              onChanged: (value) {
-                if (value != null) {
-                  _comportamientoController.text = value;
-                }
-              },
-              validator: (value) => value == null ? 'Campo requerido' : null,
-            ),
             const SizedBox(height: 16),
 
-            // Estado de Extinción
             const Text(
               'Estado de Extinción',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
@@ -1677,16 +1720,16 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Estado del Especimen
+            // 🆕 Estado del Especimen - Deshabilitado para Flora
             _buildTextField(
               controller: _estadoEspecimenController,
               label: 'Estado del Espécimen',
-              hint: 'Ej: Saludable, Herido, etc.',
+              hint: esFlora ? 'Observado' : 'Ej: Saludable, Herido, etc.',
+              enabled: !esFlora,
               validator: (value) =>
                   value?.isEmpty ?? true ? 'Campo requerido' : null,
             ),
 
-            // Información del Hábitat
             const Divider(height: 32),
             const Text(
               'Hábitat',
@@ -1757,7 +1800,6 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
 
             const SizedBox(height: 32),
 
-            // Botón Validar Registro
             if (_imageBase64 != null)
               SizedBox(
                 width: double.infinity,
@@ -1783,9 +1825,7 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
                     ),
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(
-                      0xFF5C6445,
-                    ), // Verde TerraScope
+                    backgroundColor: const Color(0xFF5C6445),
                     foregroundColor: const Color(0xFFE0E0E0),
                     disabledBackgroundColor: Colors.grey[300],
                     elevation: 0,
@@ -1799,7 +1839,6 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
 
             const SizedBox(height: 16),
 
-            // Botón Guardar
             SizedBox(
               width: double.infinity,
               height: 56,
@@ -1824,9 +1863,7 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
                   ),
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(
-                    0xFF0F1D33,
-                  ), // Azul oscuro TerraScope
+                  backgroundColor: const Color(0xFF0F1D33),
                   foregroundColor: const Color(0xFFE0E0E0),
                   disabledBackgroundColor: Colors.grey[300],
                   elevation: 0,
@@ -1851,6 +1888,7 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
     int maxLines = 1,
     TextInputType? keyboardType,
     String? Function(String?)? validator,
+    bool enabled = true, // 🆕 Parámetro para habilitar/deshabilitar
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
@@ -1867,15 +1905,20 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
             maxLines: maxLines,
             keyboardType: keyboardType,
             validator: validator,
+            enabled: enabled, // 🆕 Aplicar habilitación
             decoration: InputDecoration(
               hintText: hint,
               filled: true,
-              fillColor: Colors.white,
+              fillColor: enabled ? Colors.white : Colors.grey[200], // 🆕 Color cuando está deshabilitado
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
                 borderSide: BorderSide(color: Colors.grey[300]!),
               ),
               enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.grey[300]!),
+              ),
+              disabledBorder: OutlineInputBorder( // 🆕 Borde cuando está deshabilitado
                 borderRadius: BorderRadius.circular(8),
                 borderSide: BorderSide(color: Colors.grey[300]!),
               ),
@@ -1890,7 +1933,7 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
     );
   }
 
-  // Métodos para iconos y colores de especies
+  // 🆕 Iconos actualizados para incluir Flora
   IconData _getIconForEspecie(String especie) {
     switch (especie.toLowerCase()) {
       case 'mamífero':
@@ -1908,6 +1951,15 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
         return Icons.bug_report;
       case 'planta':
         return Icons.local_florist;
+      case 'árbol':
+      case 'arbol':
+        return Icons.park;
+      case 'arbusto':
+        return Icons.nature;
+      case 'hierba':
+        return Icons.grass;
+      case 'hongo':
+        return Icons.eco;
       case 'otro':
         return Icons.category;
       default:
@@ -1915,27 +1967,37 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
     }
   }
 
+  // 🆕 Colores actualizados para incluir Flora
   Color _getColorForEspecie(String especie) {
     switch (especie.toLowerCase()) {
       case 'mamífero':
       case 'mamifero':
-        return const Color(0xFF8D6E63); // Café
+        return const Color(0xFF8D6E63);
       case 'ave':
-        return const Color(0xFF42A5F5); // Azul cielo
+        return const Color(0xFF42A5F5);
       case 'reptil':
-        return const Color(0xFF66BB6A); // Verde
+        return const Color(0xFF66BB6A);
       case 'anfibio':
-        return const Color(0xFF26C6DA); // Cyan
+        return const Color(0xFF26C6DA);
       case 'pez':
-        return const Color(0xFF29B6F6); // Azul agua
+        return const Color(0xFF29B6F6);
       case 'insecto':
-        return const Color(0xFFFFCA28); // Amarillo
+        return const Color(0xFFFFCA28);
       case 'planta':
-        return const Color(0xFF4CAF50); // Verde planta
+        return const Color(0xFF4CAF50);
+      case 'árbol':
+      case 'arbol':
+        return const Color(0xFF2E7D32);
+      case 'arbusto':
+        return const Color(0xFF689F38);
+      case 'hierba':
+        return const Color(0xFF9CCC65);
+      case 'hongo':
+        return const Color(0xFF8D6E63);
       case 'otro':
-        return const Color(0xFF9E9E9E); // Gris
+        return const Color(0xFF9E9E9E);
       default:
-        return const Color(0xFF757575); // Gris oscuro
+        return const Color(0xFF757575);
     }
   }
 }
