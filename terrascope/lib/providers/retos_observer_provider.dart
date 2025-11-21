@@ -1,0 +1,194 @@
+import 'package:flutter/material.dart';
+import '../components/models/reto_model.dart';
+import '../services/retos_service.dart';
+import '../services/session_service.dart';
+
+class RetosObserverProvider with ChangeNotifier {
+  final RetosService _retosService = RetosService();
+  final SessionService _sessionService = SessionService();
+
+  List<Reto> _retosActivos = [];
+  List<Logro> _logrosUsuario = [];
+  Map<String, dynamic> _historialUsuario = {};
+  bool _isLoading = false;
+  String? _error;
+
+  List<Reto> get retosActivos => _retosActivos;
+  List<Logro> get logrosUsuario => _logrosUsuario;
+  Map<String, dynamic> get historialUsuario => _historialUsuario;
+  bool get isLoading => _isLoading;
+  String? get error => _error;
+
+  // Cargar retos activos
+  Future<void> cargarRetosActivos() async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      _retosActivos = await _retosService.getRetosActivos();
+      print('✅ Retos cargados: ${_retosActivos.length}');
+    } catch (e) {
+      _error = 'Error al cargar retos: $e';
+      print('❌ $_error');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // Cargar logros del usuario
+  Future<void> cargarLogrosUsuario() async {
+    try {
+      final userData = await _sessionService.getUserData();
+      if (userData == null || userData['_id'] == null) {
+        throw Exception('Usuario no autenticado');
+      }
+
+      final String usuarioId = userData['_id'];
+      final data = await _retosService.getLogrosUsuario(usuarioId);
+
+      if (data != null) {
+        _logrosUsuario = (data['logros'] as List)
+            .map((l) => Logro.fromJson(l))
+            .toList();
+        _historialUsuario = data['historial'] ?? {};
+
+        print('✅ Logros cargados: ${_logrosUsuario.length}');
+        notifyListeners();
+      }
+    } catch (e) {
+      print('❌ Error cargando logros: $e');
+    }
+  }
+
+  // Inscribirse a un reto
+  Future<bool> inscribirseReto(String retoId) async {
+    try {
+      final userData = await _sessionService.getUserData();
+      if (userData == null) return false;
+
+      final usuarioId = userData['_id'];
+      final success = await _retosService.inscribirseReto(retoId, usuarioId);
+
+      if (success) {
+        await cargarRetosActivos();
+        await cargarLogrosUsuario();
+      }
+
+      return success;
+    } catch (e) {
+      print('❌ Error inscribiéndose al reto: $e');
+      return false;
+    }
+  }
+
+  // Desinscribirse de un reto
+  Future<bool> desinscribirseReto(String retoId) async {
+    try {
+      final userData = await _sessionService.getUserData();
+      if (userData == null) return false;
+
+      final usuarioId = userData['_id'];
+      final success = await _retosService.desinscribirseReto(retoId, usuarioId);
+
+      if (success) {
+        await cargarRetosActivos();
+      }
+
+      return success;
+    } catch (e) {
+      print('❌ Error desinscribiéndose del reto: $e');
+      return false;
+    }
+  }
+
+  // Obtener progreso en un reto
+  Future<Map<String, ProgresoReto>?> getProgresoReto(String retoId) async {
+    try {
+      final userData = await _sessionService.getUserData();
+      if (userData == null) return null;
+
+      final usuarioId = userData['_id'];
+      final data = await _retosService.getProgresoReto(retoId, usuarioId);
+
+      if (data != null && data['progreso'] != null) {
+        final Map<String, ProgresoReto> progreso = {};
+        (data['progreso'] as Map<String, dynamic>).forEach((key, value) {
+          progreso[key] = ProgresoReto.fromJson(value);
+        });
+        return progreso;
+      }
+
+      return null;
+    } catch (e) {
+      print('❌ Error obteniendo progreso: $e');
+      return null;
+    }
+  }
+
+  // Toggle visibilidad de logro
+  Future<bool> toggleMostrarLogro(String logroId) async {
+    try {
+      final userData = await _sessionService.getUserData();
+      if (userData == null) return false;
+
+      final usuarioId = userData['_id'];
+      final success = await _retosService.toggleMostrarLogro(
+        usuarioId,
+        logroId,
+      );
+
+      if (success) {
+        await cargarLogrosUsuario();
+      }
+
+      return success;
+    } catch (e) {
+      print('❌ Error cambiando visibilidad: $e');
+      return false;
+    }
+  }
+
+  // Verificar si el usuario está inscrito en un reto
+  bool estaInscrito(String retoId, String? usuarioId) {
+    if (usuarioId == null) return false;
+
+    final reto = _retosActivos.firstWhere(
+      (r) => r.id == retoId,
+      orElse: () => Reto(
+        id: '',
+        nombreReto: '',
+        descripcionReto: '',
+        condiciones: {},
+        usuariosInscritos: [],
+        usuariosFinalizados: [],
+        estado: '',
+        esTemporal: false,
+      ),
+    );
+
+    return reto.usuariosInscritos.contains(usuarioId);
+  }
+
+  // Verificar si el usuario completó un reto
+  bool haCompletado(String retoId, String? usuarioId) {
+    if (usuarioId == null) return false;
+
+    final reto = _retosActivos.firstWhere(
+      (r) => r.id == retoId,
+      orElse: () => Reto(
+        id: '',
+        nombreReto: '',
+        descripcionReto: '',
+        condiciones: {},
+        usuariosInscritos: [],
+        usuariosFinalizados: [],
+        estado: '',
+        esTemporal: false,
+      ),
+    );
+
+    return reto.usuariosFinalizados.any((u) => u.usuarioId == usuarioId);
+  }
+}

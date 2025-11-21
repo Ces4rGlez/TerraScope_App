@@ -2,8 +2,10 @@ import 'dart:io';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:provider/provider.dart';
 import 'package:terrascope/components/ia/ia_registro.dart';
 import 'package:terrascope/services/ia_service.dart';
+import '../../providers/retos_observer_provider.dart';
 import '../../services/camera_service.dart';
 import '../../services/fauna_flora_service.dart';
 import '../../services/session_service.dart';
@@ -127,7 +129,7 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
   void _actualizarCamposSegunTipo(String nuevoTipo) {
     setState(() {
       _tipo = nuevoTipo;
-      
+
       if (nuevoTipo == 'Flora') {
         // Establecer valores por defecto para Flora
         _especieSeleccionada = 'Planta';
@@ -1234,8 +1236,9 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
 
     try {
       final nombreUsuario = await _sessionService.getUserName();
+      final idUsuario = await _sessionService.getUserId();
 
-      if (nombreUsuario == null) {
+      if (nombreUsuario == null || idUsuario == null) {
         _showError('No hay sesión activa. Por favor inicia sesión.');
         setState(() {
           _isSaving = false;
@@ -1253,6 +1256,7 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
 
       final avistamiento = Avistamiento(
         id: '',
+        idUsuario: idUsuario,
         nombreComun: _nombreComunController.text,
         nombreCientifico: _nombreCientificoController.text,
         especie: _especieSeleccionada,
@@ -1297,6 +1301,9 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
             backgroundColor: Colors.green,
           ),
         );
+        // Refresh retos and logros after successful avistamiento registration
+        context.read<RetosObserverProvider>().cargarRetosActivos();
+        context.read<RetosObserverProvider>().cargarLogrosUsuario();
       }
     } catch (e) {
       _showError('Error al guardar: $e');
@@ -1407,7 +1414,7 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
   Widget _buildFormStep() {
     // 🆕 Determinar si es Flora para deshabilitar campos
     final bool esFlora = _tipo == 'Flora';
-    
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Form(
@@ -1535,8 +1542,9 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
                 filled: true,
                 fillColor: esFlora ? Colors.grey[200] : Colors.white,
               ),
-              items: (esFlora ? _especiesFlora : _especiesDisponibles)
-                  .map((especie) {
+              items: (esFlora ? _especiesFlora : _especiesDisponibles).map((
+                especie,
+              ) {
                 return DropdownMenuItem<String>(
                   value: especie,
                   child: Row(
@@ -1558,15 +1566,17 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
                   ),
                 );
               }).toList(),
-              onChanged: esFlora ? null : (value) {
-                if (value != null) {
-                  setState(() {
-                    _especieSeleccionada = value;
-                  });
-                }
-              },
+              onChanged: esFlora
+                  ? null
+                  : (value) {
+                      if (value != null) {
+                        setState(() {
+                          _especieSeleccionada = value;
+                        });
+                      }
+                    },
             ),
-            
+
             // 🆕 Mensaje informativo cuando es Flora
             if (esFlora) ...[
               const SizedBox(height: 8),
@@ -1909,7 +1919,9 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
             decoration: InputDecoration(
               hintText: hint,
               filled: true,
-              fillColor: enabled ? Colors.white : Colors.grey[200], // 🆕 Color cuando está deshabilitado
+              fillColor: enabled
+                  ? Colors.white
+                  : Colors.grey[200], // 🆕 Color cuando está deshabilitado
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
                 borderSide: BorderSide(color: Colors.grey[300]!),
@@ -1918,7 +1930,8 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
                 borderRadius: BorderRadius.circular(8),
                 borderSide: BorderSide(color: Colors.grey[300]!),
               ),
-              disabledBorder: OutlineInputBorder( // 🆕 Borde cuando está deshabilitado
+              disabledBorder: OutlineInputBorder(
+                // 🆕 Borde cuando está deshabilitado
                 borderRadius: BorderRadius.circular(8),
                 borderSide: BorderSide(color: Colors.grey[300]!),
               ),

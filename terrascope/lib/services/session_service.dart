@@ -23,7 +23,7 @@ class SessionService {
     try {
       final prefs = await SharedPreferences.getInstance();
       final userDataString = prefs.getString(_keyUserData);
-      
+
       if (userDataString != null) {
         return json.decode(userDataString) as Map<String, dynamic>;
       }
@@ -38,6 +38,12 @@ class SessionService {
   Future<String?> getUserName() async {
     final userData = await getUserData();
     return userData?['nombre_usuario'] as String?;
+  }
+
+  /// Obtener solo el ID del usuario
+  Future<String?> getUserId() async {
+    final userData = await getUserData();
+    return userData?['_id'] as String?;
   }
 
   /// Obtener solo el email del usuario
@@ -75,7 +81,7 @@ class SessionService {
     try {
       final prefs = await SharedPreferences.getInstance();
       final currentData = await getUserData();
-      
+
       if (currentData != null) {
         final updatedData = {...currentData, ...newData};
         await prefs.setString(_keyUserData, json.encode(updatedData));
