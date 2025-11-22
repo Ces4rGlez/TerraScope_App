@@ -121,6 +121,13 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
         actions: [
+           IconButton(
+            icon: const Icon(Icons.emoji_events, color: Color(0xFFE0E0E0)),
+            onPressed: () {
+              Navigator.pushNamed(context, '/retos');
+            },
+            tooltip: 'Desafíos',
+          ),
           IconButton(
             icon: const Icon(Icons.account_circle, color: Color(0xFFE0E0E0)),
             onPressed: () async {
