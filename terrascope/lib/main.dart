@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:terrascope/components/screens/login_page.dart';
 import 'package:terrascope/components/screens/pagina_inicio.dart';
+import 'package:terrascope/components/screens/profile_page.dart';
 import 'package:terrascope/components/screens/register_page.dart';
 import 'package:terrascope/components/screens/retos_activos_screen.dart';
 import 'package:terrascope/components/screens/logros_screen.dart';
@@ -37,6 +38,8 @@ class MyApp extends StatelessWidget {
         '/register': (context) => const RegisterPage(),
         '/map': (context) => const MapPage(),
         '/home': (context) => const HomePage(),
+        '/profile': (context) => const ProfileScreen(),
+        
         '/retos': (context) => const RetosActivosScreen(),
         '/logros': (context) => const LogrosScreen(),
       },
