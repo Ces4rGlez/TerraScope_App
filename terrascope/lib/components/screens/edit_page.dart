@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:terrascope/services/auth_service.dart';
 import 'package:terrascope/services/session_service.dart';
 import 'package:terrascope/services/camera_service.dart';
+import 'dart:convert';
 
 class EditProfileScreen extends StatefulWidget {
   final Map<String, dynamic> userData;
@@ -263,7 +264,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     if (_nuevaImagen != null) {
       imageProvider = FileImage(_nuevaImagen!);
     } else if (_imagenActual != null && _imagenActual!.isNotEmpty) {
-      imageProvider = NetworkImage(_imagenActual!);
+      // Si es base64
+      if (_imagenActual!.startsWith('data:image')) {
+        final base64String = _imagenActual!.split(',').last;
+        imageProvider = MemoryImage(base64Decode(base64String));
+      } else {
+        // Si es URL
+        imageProvider = NetworkImage(_imagenActual!);
+      }
     }
 
     return Center(

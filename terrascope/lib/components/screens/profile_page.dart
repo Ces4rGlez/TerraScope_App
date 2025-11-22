@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:terrascope/services/auth_service.dart';
 import 'package:terrascope/services/session_service.dart';
 import 'package:terrascope/components/screens/edit_page.dart';
+import 'dart:convert';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -159,10 +160,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  ImageProvider? _getImageProvider(String? imagenPerfil) {
+    if (imagenPerfil == null || imagenPerfil.isEmpty) return null;
+    
+    // Si es base64
+    if (imagenPerfil.startsWith('data:image')) {
+      final base64String = imagenPerfil.split(',').last;
+      return MemoryImage(base64Decode(base64String));
+    }
+    
+    // Si es URL
+    return NetworkImage(imagenPerfil);
+  }
+
   Widget _buildProfileHeader() {
     final imagenPerfil = _userData?['imagen_perfil'];
     final nombre = _userData?['nombre_usuario'] ?? 'Usuario';
     final rol = _userData?['rol']?['nombre_rol'] ?? 'Usuario';
+    final imageProvider = _getImageProvider(imagenPerfil);
 
     return Center(
       child: Column(
@@ -170,10 +185,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           CircleAvatar(
             radius: 60,
             backgroundColor: Colors.green[100],
-            backgroundImage: imagenPerfil != null && imagenPerfil.isNotEmpty
-                ? NetworkImage(imagenPerfil)
-                : null,
-            child: imagenPerfil == null || imagenPerfil.isEmpty
+            backgroundImage: imageProvider,
+            child: imageProvider == null
                 ? Icon(Icons.person, size: 60, color: Colors.green[700])
                 : null,
           ),
