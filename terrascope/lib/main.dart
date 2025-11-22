@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:terrascope/components/screens/login_page.dart';
 import 'package:terrascope/components/screens/pagina_inicio.dart';
+import 'package:terrascope/components/screens/profile_page.dart';
 import 'package:terrascope/components/screens/register_page.dart';
 import 'components/map/map_page.dart';
 
@@ -26,6 +27,8 @@ class MyApp extends StatelessWidget {
         '/register': (context) => const RegisterPage(),
         '/map': (context) => const MapPage(),
         '/home': (context) => const HomePage(),
+        '/profile': (context) => const ProfileScreen(),
+        
       },
 
       //Aquí se usa onGenerateRoute para pasar los datos dinámicos

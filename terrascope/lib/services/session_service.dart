@@ -39,7 +39,10 @@ class SessionService {
     final userData = await getUserData();
     return userData?['nombre_usuario'] as String?;
   }
-
+Future<String?> getUserId() async {
+  final userData = await getUserData();
+  return userData?['_id'] as String?;
+}
   /// Obtener solo el email del usuario
   Future<String?> getUserEmail() async {
     final userData = await getUserData();
