@@ -1,12 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:terrascope/components/screens/login_page.dart';
 import 'package:terrascope/components/screens/pagina_inicio.dart';
 import 'package:terrascope/components/screens/profile_page.dart';
 import 'package:terrascope/components/screens/register_page.dart';
+import 'package:terrascope/components/screens/retos_activos_screen.dart';
+import 'package:terrascope/components/screens/logros_screen.dart';
+import 'package:terrascope/providers/retos_observer_provider.dart';
 import 'components/map/map_page.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => RetosObserverProvider()),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -29,9 +40,9 @@ class MyApp extends StatelessWidget {
         '/home': (context) => const HomePage(),
         '/profile': (context) => const ProfileScreen(),
         
+        '/retos': (context) => const RetosActivosScreen(),
+        '/logros': (context) => const LogrosScreen(),
       },
-
-      //Aquí se usa onGenerateRoute para pasar los datos dinámicos
       onGenerateRoute: (settings) {
         if (settings.name == '/home') {}
 
