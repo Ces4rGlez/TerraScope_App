@@ -14,7 +14,7 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   final SessionService _sessionService = SessionService();
   final AuthService _authService = AuthService();
-  
+
   Map<String, dynamic>? _userData;
   bool _isLoading = true;
   String? _error;
@@ -32,7 +32,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         builder: (context) => EditProfileScreen(userData: _userData!),
       ),
     );
-    
+
     if (result == true) {
       _loadUserProfile();
     }
@@ -47,7 +47,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       final sessionData = await _sessionService.getUserData();
       final userId = sessionData?['_id'];
-      
+
       if (userId == null) {
         setState(() {
           _error = 'No se encontró la sesión del usuario';
@@ -57,7 +57,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
 
       final userData = await _authService.obtenerUsuarioPorId(userId);
-      
+
       if (userData != null) {
         setState(() {
           _userData = userData;
@@ -162,13 +162,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   ImageProvider? _getImageProvider(String? imagenPerfil) {
     if (imagenPerfil == null || imagenPerfil.isEmpty) return null;
-    
+
     // Si es base64
     if (imagenPerfil.startsWith('data:image')) {
       final base64String = imagenPerfil.split(',').last;
       return MemoryImage(base64Decode(base64String));
     }
-    
+
     // Si es URL
     return NetworkImage(imagenPerfil);
   }
@@ -235,10 +235,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const Divider(),
-            _buildInfoRow(Icons.email, 'Email', _userData?['email_usuario'] ?? 'No especificado'),
-            _buildInfoRow(Icons.phone, 'Teléfono', _userData?['telefono_usuario'] ?? 'No especificado'),
-            _buildInfoRow(Icons.cake, 'Fecha de nacimiento', _formatDate(_userData?['fecha_nac_usuario'])),
-            _buildInfoRow(Icons.calendar_today, 'Miembro desde', _formatDate(_userData?['createdAt'])),
+            _buildInfoRow(
+              Icons.email,
+              'Email',
+              _userData?['email_usuario'] ?? 'No especificado',
+            ),
+            _buildInfoRow(
+              Icons.phone,
+              'Teléfono',
+              _userData?['telefono_usuario'] ?? 'No especificado',
+            ),
+            _buildInfoRow(
+              Icons.cake,
+              'Fecha de nacimiento',
+              _formatDate(_userData?['fecha_nac_usuario']),
+            ),
+            _buildInfoRow(
+              Icons.calendar_today,
+              'Miembro desde',
+              _formatDate(_userData?['createdAt']),
+            ),
           ],
         ),
       ),
@@ -256,7 +272,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                Text(
+                  label,
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                ),
                 Text(value, style: const TextStyle(fontSize: 16)),
               ],
             ),
@@ -289,28 +308,38 @@ class _ProfileScreenState extends State<ProfileScreen> {
               children: [
                 Icon(Icons.pets, color: Colors.orange[700]),
                 const SizedBox(width: 8),
-                const Text('Fauna', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                const Text(
+                  'Fauna',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                ),
               ],
             ),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: fauna.entries.map((e) => _buildStatChip(e.key, e.value, Colors.orange)).toList(),
+              children: fauna.entries
+                  .map((e) => _buildStatChip(e.key, e.value, Colors.orange))
+                  .toList(),
             ),
             const SizedBox(height: 16),
             Row(
               children: [
                 Icon(Icons.local_florist, color: Colors.green[700]),
                 const SizedBox(width: 8),
-                const Text('Flora', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                const Text(
+                  'Flora',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                ),
               ],
             ),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: flora.entries.map((e) => _buildStatChip(e.key, e.value, Colors.green)).toList(),
+              children: flora.entries
+                  .map((e) => _buildStatChip(e.key, e.value, Colors.green))
+                  .toList(),
             ),
           ],
         ),
@@ -329,7 +358,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(label, style: TextStyle(color: color.withValues(alpha: 0.8), fontSize: 12)),
+          Text(
+            label,
+            style: TextStyle(color: color.withValues(alpha: 0.8), fontSize: 12),
+          ),
           const SizedBox(width: 6),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -339,7 +371,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             child: Text(
               '$value',
-              style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
         ],
@@ -364,14 +400,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.amber[100],
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
                     '${logros.length}',
-                    style: TextStyle(color: Colors.amber[800], fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      color: Colors.amber[800],
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],
@@ -381,7 +423,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const Padding(
                 padding: EdgeInsets.all(16),
                 child: Center(
-                  child: Text('Aún no tienes logros', style: TextStyle(color: Colors.grey)),
+                  child: Text(
+                    'Aún no tienes logros',
+                    style: TextStyle(color: Colors.grey),
+                  ),
                 ),
               )
             else
@@ -394,7 +439,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildLogroItem(Map<String, dynamic> logro) {
     final esMostrado = logro['es_mostrado'] ?? true;
-    
+
     return ListTile(
       leading: Icon(
         Icons.emoji_events,
@@ -436,14 +481,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.blue[100],
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
                     '${retos.length}',
-                    style: TextStyle(color: Colors.blue[800], fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      color: Colors.blue[800],
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],
@@ -453,14 +504,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const Padding(
                 padding: EdgeInsets.all(16),
                 child: Center(
-                  child: Text('No tienes retos activos', style: TextStyle(color: Colors.grey)),
+                  child: Text(
+                    'No tienes retos activos',
+                    style: TextStyle(color: Colors.grey),
+                  ),
                 ),
               )
             else
-              ...retos.map((retoId) => ListTile(
-                leading: const Icon(Icons.flag, color: Colors.blue),
-                title: Text('Reto ID: $retoId'),
-              )).toList(),
+              ...retos
+                  .map(
+                    (retoId) => ListTile(
+                      leading: const Icon(Icons.flag, color: Colors.blue),
+                      title: Text('Reto ID: $retoId'),
+                    ),
+                  )
+                  .toList(),
           ],
         ),
       ),
@@ -506,7 +564,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (confirm == true) {
       await _sessionService.logout();
       if (mounted) {
-        Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+        Navigator.of(
+          context,
+        ).pushNamedAndRemoveUntil('/login', (route) => false);
       }
     }
   }

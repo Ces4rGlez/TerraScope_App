@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import '../components/models/reto_model.dart';
 import '../services/retos_service.dart';
 import '../services/session_service.dart';
+import '../services/notification_service.dart';
 
 class RetosObserverProvider with ChangeNotifier {
   final RetosService _retosService = RetosService();
   final SessionService _sessionService = SessionService();
+  final NotificationService _notificationService = NotificationService();
 
   List<Reto> _retosActivos = [];
   List<Logro> _logrosUsuario = [];
@@ -74,6 +76,14 @@ class RetosObserverProvider with ChangeNotifier {
       if (success) {
         await cargarRetosActivos();
         await cargarLogrosUsuario();
+        // Notificación de suscripción a reto
+        final notification = AppNotification(
+          id: 'suscripcion_$retoId',
+          title: 'Suscrito a Reto',
+          message: 'Te has suscrito al reto. ¡Estate atento, pronto cerrará!',
+          type: NotificationType.info,
+        );
+        _notificationService.showNotification(notification);
       }
 
       return success;
@@ -190,5 +200,69 @@ class RetosObserverProvider with ChangeNotifier {
     );
 
     return reto.usuariosFinalizados.any((u) => u.usuarioId == usuarioId);
+  }
+
+  List<String> _retosFinalizadosPrevios = [];
+
+  // Actualiza retos activos, cargas logros y genera notificaciones para nuevos retos y retos completados
+  Future<void> actualizarRetosYNotificaciones() async {
+    // Guardar estado previo de retos finalizados del usuario
+    final prevRetosFinalizados = List<String>.from(_retosFinalizadosPrevios);
+
+    await cargarRetosActivos();
+    await cargarLogrosUsuario();
+
+    // Detectar nuevos retos finalizados
+    final userData = await _sessionService.getUserData();
+    final usuarioId = userData?['_id'];
+
+    final retosFinalizadosActuales = _retosActivos
+        .where(
+          (r) => r.usuariosFinalizados.any((u) => u.usuarioId == usuarioId),
+        )
+        .map((r) => r.id)
+        .toList();
+
+    // Retos completados nuevos (en actuales y no en previos)
+    final nuevosRetosCompletados = retosFinalizadosActuales
+        .where((id) => !prevRetosFinalizados.contains(id))
+        .toList();
+
+    // Actualizar el estado previo
+    _retosFinalizadosPrevios = retosFinalizadosActuales;
+
+    // Notificar nuevos retos completados
+    for (var retoId in nuevosRetosCompletados) {
+      final reto = _retosActivos.firstWhere(
+        (r) => r.id == retoId,
+        orElse: () => Reto(
+          id: '',
+          nombreReto: '',
+          descripcionReto: '',
+          condiciones: {},
+          usuariosInscritos: [],
+          usuariosFinalizados: [],
+          estado: '',
+          esTemporal: false,
+        ),
+      );
+      if (reto.id != '') {
+        final notification = AppNotification(
+          id: 'reto_completado_$retoId',
+          title: '¡Reto Completado!',
+          message: 'Has completado el reto "${reto.nombreReto}". ¡Felicidades!',
+          type: NotificationType.success,
+        );
+        _notificationService.showNotification(notification);
+      }
+    }
+
+    final notification = AppNotification(
+      id: 'nuevo_reto',
+      title: 'Nuevos Retos Disponibles',
+      message: 'Se han generado nuevos retos para ti. ¡Échales un vistazo!',
+      type: NotificationType.success,
+    );
+    _notificationService.showNotification(notification);
   }
 }
