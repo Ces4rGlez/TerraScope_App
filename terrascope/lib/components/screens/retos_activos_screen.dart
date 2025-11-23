@@ -122,7 +122,7 @@ class _RetosActivosScreenState extends State<RetosActivosScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Los nuevos retos se generan cada 2 semanas',
+                    'Los nuevos retos se generan cada 2 horas',
                     style: TextStyle(
                       fontSize: 14,
                       color: const Color(0xFFE0E0E0).withOpacity(0.7),
