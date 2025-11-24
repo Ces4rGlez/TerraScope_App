@@ -3,6 +3,8 @@ import 'package:terrascope/services/auth_service.dart';
 import 'package:terrascope/services/session_service.dart';
 import 'package:terrascope/components/screens/edit_page.dart';
 import 'dart:convert';
+import 'package:provider/provider.dart';
+import 'package:terrascope/services/theme_service.dart'; // <--- AGREGAR
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -145,6 +147,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: [
             _buildProfileHeader(),
             const SizedBox(height: 24),
+            const SizedBox(height: 24),
+            _buildConfigSection(),      
             _buildInfoSection(),
             const SizedBox(height: 24),
             _buildHistorialSection(),
@@ -221,6 +225,42 @@ class _ProfileScreenState extends State<ProfileScreen> {
       default:
         return Colors.green;
     }
+  }
+
+  Widget _buildConfigSection() {
+    // Escuchamos el estado actual del tema
+    final themeProvider = context.watch<ThemeProvider>();
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Configuración',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const Divider(),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Icon(
+                themeProvider.isDarkMode ? Icons.dark_mode : Icons.light_mode,
+                color: themeProvider.isDarkMode ? Colors.purple[200] : Colors.orange,
+              ),
+              title: const Text('Modo Oscuro'),
+              trailing: Switch(
+                value: themeProvider.isDarkMode,
+                activeColor: Colors.green,
+                onChanged: (value) {
+                  context.read<ThemeProvider>().toggleTheme(value);
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildInfoSection() {

@@ -7,6 +7,7 @@ import 'package:terrascope/components/screens/register_page.dart';
 import 'package:terrascope/components/screens/retos_activos_screen.dart';
 import 'package:terrascope/components/screens/logros_screen.dart';
 import 'package:terrascope/providers/retos_observer_provider.dart';
+import 'package:terrascope/services/theme_service.dart';
 import 'components/map/map_page.dart';
 
 void main() {
@@ -14,6 +15,7 @@ void main() {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => RetosObserverProvider()),
+        ChangeNotifierProvider(create: (_) => ThemeProvider()), 
       ],
       child: const MyApp(),
     ),
@@ -25,13 +27,17 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Esto hace que 'MyApp' escuche los cambios y se reconstruya cuando cambias el switch
+    final themeProvider = context.watch<ThemeProvider>();
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'TerraScope',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
-        useMaterial3: true,
-      ),
+      
+      theme: themeProvider.lightTheme,    // Usamos el tema claro del provider
+      darkTheme: themeProvider.darkTheme, // Usamos el tema oscuro del provider
+      themeMode: themeProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light, // El interruptor global
+      
       initialRoute: '/login',
       routes: {
         '/login': (context) => const LoginPage(),
@@ -39,7 +45,6 @@ class MyApp extends StatelessWidget {
         '/map': (context) => const MapPage(),
         '/home': (context) => const HomePage(),
         '/profile': (context) => const ProfileScreen(),
-        
         '/retos': (context) => const RetosActivosScreen(),
         '/logros': (context) => const LogrosScreen(),
       },
