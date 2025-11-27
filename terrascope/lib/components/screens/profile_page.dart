@@ -1,10 +1,10 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:terrascope/components/models/reto_model.dart';
 import 'package:terrascope/services/auth_service.dart';
+import 'package:terrascope/services/retos_service.dart';
 import 'package:terrascope/services/session_service.dart';
 import 'package:terrascope/components/screens/edit_page.dart';
-import 'dart:convert';
-import 'package:provider/provider.dart';
-import 'package:terrascope/services/theme_service.dart'; // <--- AGREGAR
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -16,9 +16,12 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   final SessionService _sessionService = SessionService();
   final AuthService _authService = AuthService();
-
+  final RetosService _retosService = RetosService();
+  
   Map<String, dynamic>? _userData;
+  List<Reto> _retosActivos = [];
   bool _isLoading = true;
+  bool _isLoadingRetos = false;
   String? _error;
 
   @override
@@ -34,7 +37,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         builder: (context) => EditProfileScreen(userData: _userData!),
       ),
     );
-
+    
     if (result == true) {
       _loadUserProfile();
     }
@@ -49,7 +52,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       final sessionData = await _sessionService.getUserData();
       final userId = sessionData?['_id'];
-
+      
       if (userId == null) {
         setState(() {
           _error = 'No se encontró la sesión del usuario';
@@ -59,12 +62,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
 
       final userData = await _authService.obtenerUsuarioPorId(userId);
-
+      
       if (userData != null) {
         setState(() {
           _userData = userData;
           _isLoading = false;
         });
+        
+        // Cargar detalles de los retos activos
+        _loadRetosActivos();
       } else {
         setState(() {
           _error = 'No se pudieron cargar los datos del usuario';
@@ -86,6 +92,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
       return '${date.day}/${date.month}/${date.year}';
     } catch (e) {
       return dateString;
+    }
+  }
+
+  Future<void> _loadRetosActivos() async {
+    final retosIds = _userData?['retos_activos'] as List<dynamic>? ?? [];
+    if (retosIds.isEmpty) return;
+
+    setState(() => _isLoadingRetos = true);
+
+    try {
+      List<Reto> retosData = [];
+      
+      for (var retoId in retosIds) {
+        final reto = await _retosService.getRetoById(retoId.toString());
+        if (reto != null) {
+          retosData.add(reto);
+        }
+      }
+
+      setState(() {
+        _retosActivos = retosData;
+        _isLoadingRetos = false;
+      });
+    } catch (e) {
+      print('Error al cargar retos: $e');
+      setState(() => _isLoadingRetos = false);
     }
   }
 
@@ -147,8 +179,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: [
             _buildProfileHeader(),
             const SizedBox(height: 24),
-            const SizedBox(height: 24),
-            _buildConfigSection(),      
             _buildInfoSection(),
             const SizedBox(height: 24),
             _buildHistorialSection(),
@@ -166,13 +196,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   ImageProvider? _getImageProvider(String? imagenPerfil) {
     if (imagenPerfil == null || imagenPerfil.isEmpty) return null;
-
+    
     // Si es base64
     if (imagenPerfil.startsWith('data:image')) {
       final base64String = imagenPerfil.split(',').last;
       return MemoryImage(base64Decode(base64String));
     }
-
+    
     // Si es URL
     return NetworkImage(imagenPerfil);
   }
@@ -181,6 +211,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final imagenPerfil = _userData?['imagen_perfil'];
     final nombre = _userData?['nombre_usuario'] ?? 'Usuario';
     final rol = _userData?['rol']?['nombre_rol'] ?? 'Usuario';
+    final tituloActivo = _userData?['titulo_activo'];
     final imageProvider = _getImageProvider(imagenPerfil);
 
     return Center(
@@ -211,6 +242,41 @@ class _ProfileScreenState extends State<ProfileScreen> {
               style: const TextStyle(color: Colors.white, fontSize: 12),
             ),
           ),
+          // 👇 NUEVO: Mostrar título activo
+          if (tituloActivo != null) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.purple[400]!, Colors.purple[600]!],
+                ),
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.purple.withValues(alpha: 0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.military_tech, color: Colors.white, size: 16),
+                  const SizedBox(width: 6),
+                  Text(
+                    tituloActivo['descripcion_titulo'] ?? tituloActivo['nombre_logro'] ?? 'Título',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -227,42 +293,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  Widget _buildConfigSection() {
-    // Escuchamos el estado actual del tema
-    final themeProvider = context.watch<ThemeProvider>();
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Configuración',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const Divider(),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: Icon(
-                themeProvider.isDarkMode ? Icons.dark_mode : Icons.light_mode,
-                color: themeProvider.isDarkMode ? Colors.purple[200] : Colors.orange,
-              ),
-              title: const Text('Modo Oscuro'),
-              trailing: Switch(
-                value: themeProvider.isDarkMode,
-                activeColor: Colors.green,
-                onChanged: (value) {
-                  context.read<ThemeProvider>().toggleTheme(value);
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildInfoSection() {
     return Card(
       child: Padding(
@@ -275,26 +305,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const Divider(),
-            _buildInfoRow(
-              Icons.email,
-              'Email',
-              _userData?['email_usuario'] ?? 'No especificado',
-            ),
-            _buildInfoRow(
-              Icons.phone,
-              'Teléfono',
-              _userData?['telefono_usuario'] ?? 'No especificado',
-            ),
-            _buildInfoRow(
-              Icons.cake,
-              'Fecha de nacimiento',
-              _formatDate(_userData?['fecha_nac_usuario']),
-            ),
-            _buildInfoRow(
-              Icons.calendar_today,
-              'Miembro desde',
-              _formatDate(_userData?['createdAt']),
-            ),
+            _buildInfoRow(Icons.email, 'Email', _userData?['email_usuario'] ?? 'No especificado'),
+            _buildInfoRow(Icons.phone, 'Teléfono', _userData?['telefono_usuario'] ?? 'No especificado'),
+            _buildInfoRow(Icons.cake, 'Fecha de nacimiento', _formatDate(_userData?['fecha_nac_usuario'])),
+            _buildInfoRow(Icons.calendar_today, 'Miembro desde', _formatDate(_userData?['createdAt'])),
           ],
         ),
       ),
@@ -312,10 +326,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  label,
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                ),
+                Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
                 Text(value, style: const TextStyle(fontSize: 16)),
               ],
             ),
@@ -348,38 +359,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
               children: [
                 Icon(Icons.pets, color: Colors.orange[700]),
                 const SizedBox(width: 8),
-                const Text(
-                  'Fauna',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                ),
+                const Text('Fauna', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
               ],
             ),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: fauna.entries
-                  .map((e) => _buildStatChip(e.key, e.value, Colors.orange))
-                  .toList(),
+              children: fauna.entries.map((e) => _buildStatChip(e.key, e.value, Colors.orange)).toList(),
             ),
             const SizedBox(height: 16),
             Row(
               children: [
                 Icon(Icons.local_florist, color: Colors.green[700]),
                 const SizedBox(width: 8),
-                const Text(
-                  'Flora',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                ),
+                const Text('Flora', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
               ],
             ),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: flora.entries
-                  .map((e) => _buildStatChip(e.key, e.value, Colors.green))
-                  .toList(),
+              children: flora.entries.map((e) => _buildStatChip(e.key, e.value, Colors.green)).toList(),
             ),
           ],
         ),
@@ -398,10 +399,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            label,
-            style: TextStyle(color: color.withValues(alpha: 0.8), fontSize: 12),
-          ),
+          Text(label, style: TextStyle(color: color.withValues(alpha: 0.8), fontSize: 12)),
           const SizedBox(width: 6),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -411,11 +409,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             child: Text(
               '$value',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
             ),
           ),
         ],
@@ -440,20 +434,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: Colors.amber[100],
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
                     '${logros.length}',
-                    style: TextStyle(
-                      color: Colors.amber[800],
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(color: Colors.amber[800], fontWeight: FontWeight.bold),
                   ),
                 ),
               ],
@@ -463,10 +451,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const Padding(
                 padding: EdgeInsets.all(16),
                 child: Center(
-                  child: Text(
-                    'Aún no tienes logros',
-                    style: TextStyle(color: Colors.grey),
-                  ),
+                  child: Text('Aún no tienes logros', style: TextStyle(color: Colors.grey)),
                 ),
               )
             else
@@ -478,92 +463,132 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildLogroItem(Map<String, dynamic> logro) {
-    final esMostrado = logro['es_mostrado'] ?? true;
+  final esMostrado = logro['es_mostrado'] ?? true;
+  final tituloActivo = _userData?['titulo_activo'];
+  final esActivo = tituloActivo != null && tituloActivo['id_logro'] == logro['_id'];
 
-    return ListTile(
+  return Card(
+    margin: const EdgeInsets.symmetric(vertical: 4),
+    elevation: esActivo ? 3 : 1,
+    color: esActivo ? Colors.purple[50] : null,
+    child: ListTile(
       leading: Icon(
         Icons.emoji_events,
-        color: esMostrado ? Colors.amber : Colors.grey,
+        color: esActivo ? Colors.purple : (esMostrado ? Colors.amber : Colors.grey),
         size: 32,
       ),
-      title: Text(logro['nombre_logro'] ?? 'Logro'),
+      title: Text(
+        logro['nombre_logro'] ?? 'Logro',
+        style: TextStyle(
+          fontWeight: esActivo ? FontWeight.bold : FontWeight.normal,
+        ),
+      ),
       subtitle: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (logro['descripcion_titulo'] != null)
-            Text(logro['descripcion_titulo']),
+            Text(
+              logro['descripcion_titulo'],
+              style: TextStyle(
+                color: esActivo ? Colors.purple[700] : null,
+              ),
+            ),
           Text(
             'Obtenido: ${_formatDate(logro['fecha_obtencion'])}',
             style: TextStyle(fontSize: 12, color: Colors.grey[600]),
           ),
         ],
       ),
-      trailing: esMostrado
-          ? const Icon(Icons.visibility, color: Colors.green)
-          : const Icon(Icons.visibility_off, color: Colors.grey),
-    );
-  }
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (esMostrado)
+            const Icon(Icons.visibility, color: Colors.green, size: 20)
+          else
+            const Icon(Icons.visibility_off, color: Colors.grey, size: 20),
+          const SizedBox(width: 8),
+          IconButton(
+            icon: Icon(
+              esActivo ? Icons.star : Icons.star_border,
+              color: esActivo ? Colors.purple : Colors.grey,
+            ),
+            onPressed: () => _handleTituloSelection(logro, esActivo),
+            tooltip: esActivo ? 'Quitar título' : 'Usar como título',
+          ),
+        ],
+      ),
+    ),
+  );
+}
 
   Widget _buildRetosActivosSection() {
-    final retos = _userData?['retos_activos'] as List<dynamic>? ?? [];
+  final retos = _userData?['retos_activos'] as List<dynamic>? ?? [];
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Retos Activos',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+  return Card(
+    child: Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Retos Activos',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.blue[100],
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.blue[100],
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    '${retos.length}',
-                    style: TextStyle(
-                      color: Colors.blue[800],
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                child: Text(
+                  '${_retosActivos.length}',
+                  style: TextStyle(color: Colors.blue[800], fontWeight: FontWeight.bold),
                 ),
-              ],
-            ),
-            const Divider(),
-            if (retos.isEmpty)
-              const Padding(
-                padding: EdgeInsets.all(16),
-                child: Center(
-                  child: Text(
-                    'No tienes retos activos',
-                    style: TextStyle(color: Colors.grey),
-                  ),
+              ),
+            ],
+          ),
+          const Divider(),
+          if (retos.isEmpty)
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child: Center(
+                child: Text('No tienes retos activos', style: TextStyle(color: Colors.grey)),
+              ),
+            )
+          else if (_isLoadingRetos)
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child: Center(child: CircularProgressIndicator()),
+            )
+          else if (_retosActivos.isEmpty && retos.isNotEmpty)
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child: Center(
+                child: Text(
+                  'No se pudieron cargar los detalles de los retos',
+                  style: TextStyle(color: Colors.orange),
+                  textAlign: TextAlign.center,
                 ),
-              )
-            else
-              ...retos
-                  .map(
-                    (retoId) => ListTile(
-                      leading: const Icon(Icons.flag, color: Colors.blue),
-                      title: Text('Reto ID: $retoId'),
-                    ),
-                  )
-                  .toList(),
-          ],
-        ),
+              ),
+            )
+          else
+            ..._retosActivos.map((reto) => ListTile(
+              leading: const Icon(Icons.flag, color: Colors.blue),
+              title: Text(reto.nombreReto),
+              subtitle: Text(
+                reto.descripcionReto,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            )).toList(),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildLogoutButton() {
     return SizedBox(
@@ -579,6 +604,87 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _handleTituloSelection(Map<String, dynamic> logro, bool esActivo) async {
+    final userId = _userData?['_id'];
+    if (userId == null) return;
+
+    try {
+      bool success;
+      
+      if (esActivo) {
+        // Quitar título activo
+        final confirm = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Quitar Título'),
+            content: const Text('¿Deseas quitar este título de tu perfil?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancelar'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Quitar'),
+              ),
+            ],
+          ),
+        );
+        
+        if (confirm != true) return;
+        
+        success = await _authService.quitarTituloActivo(userId);
+        
+        if (success && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Título removido'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      } else {
+        // Establecer nuevo título
+        success = await _authService.seleccionarTituloActivo(
+          userId,
+          logro['_id'],
+        );
+        
+        if (success && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Título "${logro['descripcion_titulo'] ?? logro['nombre_logro']}" activado'),
+              backgroundColor: Colors.purple,
+            ),
+          );
+        }
+      }
+      
+      if (success) {
+        _loadUserProfile(); // Recargar perfil
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Error al actualizar título'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      print('Error al manejar título: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Error al actualizar título'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _handleLogout() async {
@@ -604,9 +710,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (confirm == true) {
       await _sessionService.logout();
       if (mounted) {
-        Navigator.of(
-          context,
-        ).pushNamedAndRemoveUntil('/login', (route) => false);
+        Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
       }
     }
   }
