@@ -33,6 +33,7 @@ class _RetosActivosScreenState extends State<RetosActivosScreen> {
     final provider = Provider.of<RetosObserverProvider>(context, listen: false);
     await provider.cargarRetosActivos();
     await provider.cargarLogrosUsuario();
+    await provider.actualizarRetosYNotificaciones();
   }
 
   @override

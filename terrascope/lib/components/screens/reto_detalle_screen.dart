@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/reto_model.dart';
@@ -654,6 +655,20 @@ class _RetoDetalleScreenState extends State<RetoDetalleScreen>
     final top3 = _tablaPosiciones!['top3'] as List<dynamic>;
     if (top3.isEmpty) return const SizedBox.shrink();
 
+    // Organizar los puestos: 2do, 1ro, 3ro (como en los Juegos Olímpicos)
+    final segundo = top3.firstWhere(
+      (item) => item['posicion'] == 2,
+      orElse: () => null,
+    );
+    final primero = top3.firstWhere(
+      (item) => item['posicion'] == 1,
+      orElse: () => null,
+    );
+    final tercero = top3.firstWhere(
+      (item) => item['posicion'] == 3,
+      orElse: () => null,
+    );
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(20),
@@ -687,7 +702,7 @@ class _RetoDetalleScreenState extends State<RetoDetalleScreen>
               ),
               const SizedBox(width: 12),
               Text(
-                'TOP 3 - PRIMEROS EN COMPLETAR',
+                'PODIO - PRIMEROS EN COMPLETAR',
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
@@ -697,81 +712,145 @@ class _RetoDetalleScreenState extends State<RetoDetalleScreen>
               ),
             ],
           ),
-          const SizedBox(height: 20),
-          ...top3.asMap().entries.map((entry) {
-            final index = entry.key;
-            final item = entry.value;
-            final posicion = item['posicion'] ?? (index + 1);
-            final usuario = item['usuario'];
-            final fecha = DateTime.parse(item['fecha_completado']);
-
-            return Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: _getGradientForPosition(posicion),
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
-                ),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(14),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 42,
-                      height: 42,
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Center(
-                        child: Text(
-                          '$posicion',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: _getGradientForPosition(posicion)[0],
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            usuario['nombre_usuario'] ?? 'Usuario',
-                            style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            'Completado: ${_formatearFechaCompleta(fecha)}',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.white.withOpacity(0.85),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Icon(
-                      _getIconForPosition(posicion),
-                      color: Colors.white,
-                      size: 28,
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }).toList(),
+          const SizedBox(height: 24),
+          // Podium Layout
+          SizedBox(
+            height: 270,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                // 2do lugar (izquierda)
+                if (segundo != null) _buildPodiumStep(segundo, 2, 120),
+                const SizedBox(width: 8),
+                // 1er lugar (centro, más alto)
+                if (primero != null) _buildPodiumStep(primero, 1, 160),
+                const SizedBox(width: 8),
+                // 3er lugar (derecha)
+                if (tercero != null) _buildPodiumStep(tercero, 3, 100),
+              ],
+            ),
+          ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildPodiumStep(
+    Map<String, dynamic> item,
+    int posicion,
+    double height,
+  ) {
+    final usuario = item['usuario'];
+    final fecha = DateTime.parse(item['fecha_completado']);
+    final imagenPerfil = usuario['imagen_perfil'];
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Avatar del usuario
+        Container(
+          width: 50,
+          height: 50,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: _getGradientForPosition(posicion)[0],
+              width: 3,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: _getGradientForPosition(posicion)[0].withOpacity(0.3),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: ClipOval(
+            child: imagenPerfil != null && imagenPerfil.isNotEmpty
+                ? Image.memory(
+                    base64Decode(imagenPerfil),
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) =>
+                        _buildDefaultAvatar(posicion),
+                  )
+                : _buildDefaultAvatar(posicion),
+          ),
+        ),
+        const SizedBox(height: 6),
+        // Nombre del usuario
+        Container(
+          constraints: const BoxConstraints(maxWidth: 80),
+          child: Text(
+            usuario['nombre_usuario'] ?? 'Usuario',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: _azulOscuro,
+            ),
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        const SizedBox(height: 3),
+        // Fecha de completado
+        Text(
+          _formatearFechaCorta(fecha),
+          style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 8),
+        // Escalón del podio
+        Container(
+          width: 80,
+          height: height,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: _getGradientForPosition(posicion),
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+            boxShadow: [
+              BoxShadow(
+                color: _getGradientForPosition(posicion)[0].withOpacity(0.3),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                _getIconForPosition(posicion),
+                color: Colors.white,
+                size: 24,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '$posicion°',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDefaultAvatar(int posicion) {
+    return Container(
+      color: _getGradientForPosition(posicion)[0].withOpacity(0.1),
+      child: Icon(
+        Icons.person,
+        color: _getGradientForPosition(posicion)[0],
+        size: 30,
       ),
     );
   }
@@ -901,5 +980,23 @@ class _RetoDetalleScreenState extends State<RetoDetalleScreen>
       'Dic',
     ];
     return '${fecha.day} ${meses[fecha.month - 1]} ${fecha.year}';
+  }
+
+  String _formatearFechaCorta(DateTime fecha) {
+    final meses = [
+      'Ene',
+      'Feb',
+      'Mar',
+      'Abr',
+      'May',
+      'Jun',
+      'Jul',
+      'Ago',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dic',
+    ];
+    return '${fecha.day} ${meses[fecha.month - 1]}';
   }
 }

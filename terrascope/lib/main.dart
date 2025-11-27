@@ -8,6 +8,8 @@ import 'package:terrascope/components/screens/retos_activos_screen.dart';
 import 'package:terrascope/components/screens/logros_screen.dart';
 import 'package:terrascope/providers/retos_observer_provider.dart';
 import 'package:terrascope/services/theme_service.dart';
+import 'package:terrascope/services/notification_service.dart';
+import 'package:terrascope/components/notification_banner.dart';
 import 'components/map/map_page.dart';
 
 void main() {
@@ -15,15 +17,38 @@ void main() {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => RetosObserverProvider()),
-        ChangeNotifierProvider(create: (_) => ThemeProvider()), 
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_) => NotificationService()),
       ],
       child: const MyApp(),
     ),
   );
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  @override
+  void initState() {
+    super.initState();
+    // Initialize the NotificationService in the RetosObserverProvider
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final retosProvider = Provider.of<RetosObserverProvider>(
+        context,
+        listen: false,
+      );
+      final notificationService = Provider.of<NotificationService>(
+        context,
+        listen: false,
+      );
+      retosProvider.setNotificationService(notificationService);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,11 +58,13 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'TerraScope',
-      
-      theme: themeProvider.lightTheme,    // Usamos el tema claro del provider
+
+      theme: themeProvider.lightTheme, // Usamos el tema claro del provider
       darkTheme: themeProvider.darkTheme, // Usamos el tema oscuro del provider
-      themeMode: themeProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light, // El interruptor global
-      
+      themeMode: themeProvider.isDarkMode
+          ? ThemeMode.dark
+          : ThemeMode.light, // El interruptor global
+
       initialRoute: '/login',
       routes: {
         '/login': (context) => const LoginPage(),
@@ -63,6 +90,8 @@ class MyApp extends StatelessWidget {
 
         return null;
       },
+      builder: (context, child) =>
+          Stack(children: [child!, const NotificationBanner()]),
     );
   }
 }
