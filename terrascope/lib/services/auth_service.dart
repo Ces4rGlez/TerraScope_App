@@ -95,7 +95,10 @@ class AuthService {
   }
 
   /// 🔹 ACTUALIZAR USUARIO
-  Future<bool> actualizarUsuario(String id, Map<String, dynamic> datosActualizados) async {
+  Future<bool> actualizarUsuario(
+    String id,
+    Map<String, dynamic> datosActualizados,
+  ) async {
     try {
       final response = await http.patch(
         Uri.parse('$baseUrl/$id'),
@@ -120,36 +123,33 @@ class AuthService {
       return false;
     }
   }
-  Future<bool> seleccionarTituloActivo(String usuarioId, String logroId) async {
-  try {
-    
-    final response = await http.patch(
-      Uri.parse('$baseUrl/titulo-activo'),
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode({
-        'usuarioId': usuarioId,
-        'logroId': logroId,
-      }),
-    );
-    return response.statusCode == 200;
-  } catch (e) {
-    print('Error al seleccionar título: $e');
-    return false;
-  }
-}
 
-/// Quitar título activo
-Future<bool> quitarTituloActivo(String usuarioId) async {
-  try {
-    final response = await http.delete(
-      Uri.parse('$baseUrl/titulo-activo'),
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode({'usuarioId': usuarioId}),
-    );
-    return response.statusCode == 200;
-  } catch (e) {
-    print('Error al quitar título: $e');
-    return false;
+  Future<bool> seleccionarTituloActivo(String usuarioId, String logroId) async {
+    try {
+      final response = await http.patch(
+        Uri.parse('$baseUrl/titulo-activo'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'usuarioId': usuarioId, 'logroId': logroId}),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      print('Error al seleccionar título: $e');
+      return false;
+    }
   }
-}
+
+  /// Quitar título activo
+  Future<bool> quitarTituloActivo(String usuarioId) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/titulo-activo'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'usuarioId': usuarioId}),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      print('Error al quitar título: $e');
+      return false;
+    }
+  }
 }

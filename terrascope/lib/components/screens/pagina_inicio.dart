@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:terrascope/components/screens/profile_page.dart';
 import 'dart:convert';
 import '../../services/fauna_flora_service.dart';
@@ -8,6 +9,8 @@ import '../map/map_page.dart';
 import '../map/avistamiento_detail_loader.dart';
 import '../screens/registro_avistamiento_screen.dart';
 import '../../services/session_service.dart';
+import '../../providers/retos_observer_provider.dart';
+import '../../services/notification_service.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -32,6 +35,24 @@ class _HomePageState extends State<HomePage> {
     super.initState();
     _service = FaunaFloraService(baseUrl: ApiConfig.baseUrl);
     _cargarAvistamientos();
+    // Ensure notification service is set and then update retos and notifications
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = Provider.of<RetosObserverProvider>(
+        context,
+        listen: false,
+      );
+      final notificationService = Provider.of<NotificationService>(
+        context,
+        listen: false,
+      );
+      provider.setNotificationService(notificationService);
+      _actualizarRetosYNotificaciones();
+    });
+  }
+
+  Future<void> _actualizarRetosYNotificaciones() async {
+    final provider = Provider.of<RetosObserverProvider>(context, listen: false);
+    await provider.actualizarRetosYNotificaciones();
   }
 
   @override
@@ -121,7 +142,7 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
         actions: [
-           IconButton(
+          IconButton(
             icon: const Icon(Icons.emoji_events, color: Color(0xFFE0E0E0)),
             onPressed: () {
               Navigator.pushNamed(context, '/retos');
@@ -133,9 +154,7 @@ class _HomePageState extends State<HomePage> {
             onPressed: () async {
               final result = await Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const ProfileScreen(),
-                ),
+                MaterialPageRoute(builder: (context) => const ProfileScreen()),
               );
 
               if (result == true) {
@@ -143,7 +162,7 @@ class _HomePageState extends State<HomePage> {
               }
             },
           ),
-           IconButton(
+          IconButton(
             icon: const Icon(Icons.camera_alt, color: Color(0xFFE0E0E0)),
             onPressed: () async {
               final result = await Navigator.push(
