@@ -298,7 +298,6 @@ class _RegisterPageState extends State<RegisterPage>
                               style: TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
-                                color: Color(0xFF0F1D33),
                               ),
                             ),
                             const SizedBox(height: 24),
@@ -406,25 +405,25 @@ class _RegisterPageState extends State<RegisterPage>
                                   color: Color(0xFF5C6445),
                                 ),
                                 onPressed: () async {
-                                  final DateTime?
-                                  pickedDate = await showDatePicker(
-                                    context: context,
-                                    initialDate: DateTime(2000),
-                                    firstDate: DateTime(1900),
-                                    lastDate: DateTime.now(),
-                                    builder: (context, child) {
-                                      return Theme(
-                                        data: Theme.of(context).copyWith(
-                                          colorScheme: const ColorScheme.light(
-                                            primary: Color(0xFF5C6445),
-                                            onPrimary: Colors.white,
-                                            onSurface: Color(0xFF0F1D33),
-                                          ),
-                                        ),
-                                        child: child!,
+                                  final DateTime? pickedDate =
+                                      await showDatePicker(
+                                        context: context,
+                                        initialDate: DateTime(2000),
+                                        firstDate: DateTime(1900),
+                                        lastDate: DateTime.now(),
+                                        builder: (context, child) {
+                                          return Theme(
+                                            data: Theme.of(context).copyWith(
+                                              colorScheme:
+                                                  const ColorScheme.light(
+                                                    primary: Color(0xFF5C6445),
+                                                    onPrimary: Colors.white,
+                                                  ),
+                                            ),
+                                            child: child!,
+                                          );
+                                        },
                                       );
-                                    },
-                                  );
                                   if (pickedDate != null) {
                                     setState(() {
                                       fechaController.text = pickedDate

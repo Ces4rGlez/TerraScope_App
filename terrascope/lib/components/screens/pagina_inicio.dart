@@ -11,6 +11,7 @@ import '../screens/registro_avistamiento_screen.dart';
 import '../../services/session_service.dart';
 import '../../providers/retos_observer_provider.dart';
 import '../../services/notification_service.dart';
+import '../../services/theme_service.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -121,36 +122,51 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDark = themeProvider.isDarkMode;
+
+    // Theme-aware colors
+    final primaryColor = isDark
+        ? themeProvider.darkTheme.primaryColor
+        : const Color(0xFF5C6445);
+    final secondaryColor = isDark
+        ? themeProvider.darkTheme.scaffoldBackgroundColor
+        : const Color(0xFFE0E0E0);
+    final accentColor = isDark
+        ? themeProvider.darkTheme.colorScheme.secondary
+        : const Color(0xFF939E69);
+    final appBarTextColor = isDark ? Colors.white : secondaryColor;
+
     return Scaffold(
-      backgroundColor: const Color(0xFF5C6445),
+      backgroundColor: primaryColor,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF5C6445),
+        backgroundColor: primaryColor,
         elevation: 0,
         title: Row(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: const [
+          children: [
             Text(
               'TerraScope',
               style: TextStyle(
-                color: Color(0xFFE0E0E0),
+                color: appBarTextColor,
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            SizedBox(width: 8),
-            Icon(Icons.eco, color: Color(0xFFE0E0E0), size: 28),
+            const SizedBox(width: 8),
+            Icon(Icons.eco, color: appBarTextColor, size: 28),
           ],
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.emoji_events, color: Color(0xFFE0E0E0)),
+            icon: Icon(Icons.emoji_events, color: appBarTextColor),
             onPressed: () {
               Navigator.pushNamed(context, '/retos');
             },
             tooltip: 'Desafíos',
           ),
           IconButton(
-            icon: const Icon(Icons.account_circle, color: Color(0xFFE0E0E0)),
+            icon: Icon(Icons.account_circle, color: appBarTextColor),
             onPressed: () async {
               final result = await Navigator.push(
                 context,
@@ -163,7 +179,7 @@ class _HomePageState extends State<HomePage> {
             },
           ),
           IconButton(
-            icon: const Icon(Icons.camera_alt, color: Color(0xFFE0E0E0)),
+            icon: Icon(Icons.camera_alt, color: appBarTextColor),
             onPressed: () async {
               final result = await Navigator.push(
                 context,
@@ -220,7 +236,7 @@ class _HomePageState extends State<HomePage> {
             )
           : Column(
               children: [
-                _buildSearchAndFilters(),
+                _buildSearchAndFilters(primaryColor),
                 Expanded(
                   child: _avistamientosFiltrados.isEmpty
                       ? Center(
@@ -305,10 +321,10 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildSearchAndFilters() {
+  Widget _buildSearchAndFilters(Color primaryColor) {
     return Container(
       padding: const EdgeInsets.all(16),
-      color: const Color(0xFF5C6445),
+      color: primaryColor,
       child: Column(
         children: [
           TextField(
@@ -536,7 +552,7 @@ class _AvistamientoCardState extends State<AvistamientoCard> {
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
+  Widget _buildInfoRow(String label, String value, Color primaryTextColor) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),
       child: Row(
@@ -546,17 +562,17 @@ class _AvistamientoCardState extends State<AvistamientoCard> {
             width: 180,
             child: Text(
               '$label:',
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.w600,
                 fontSize: 16,
-                color: Colors.black87,
+                color: primaryTextColor,
               ),
             ),
           ),
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(fontSize: 16, color: Colors.black87),
+              style: TextStyle(fontSize: 16, color: primaryTextColor),
             ),
           ),
         ],
@@ -564,10 +580,14 @@ class _AvistamientoCardState extends State<AvistamientoCard> {
     );
   }
 
-  Widget _buildComentarioCard(comentario) {
+  Widget _buildComentarioCard(
+    comentario,
+    Color primaryTextColor,
+    Color cardBackgroundColor,
+  ) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      color: Colors.white,
+      color: cardBackgroundColor,
       child: Padding(
         padding: const EdgeInsets.all(12.0),
         child: Column(
@@ -589,10 +609,10 @@ class _AvistamientoCardState extends State<AvistamientoCard> {
                 const SizedBox(width: 8),
                 Text(
                   comentario.nombreUsuario,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
-                    color: Colors.black87,
+                    color: primaryTextColor,
                   ),
                 ),
               ],
@@ -600,7 +620,7 @@ class _AvistamientoCardState extends State<AvistamientoCard> {
             const SizedBox(height: 8),
             Text(
               comentario.comentario,
-              style: const TextStyle(fontSize: 14, color: Colors.black87),
+              style: TextStyle(fontSize: 14, color: primaryTextColor),
             ),
           ],
         ),
@@ -610,6 +630,17 @@ class _AvistamientoCardState extends State<AvistamientoCard> {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDark = themeProvider.isDarkMode;
+
+    // Theme-aware colors
+    final cardBackgroundColor = isDark
+        ? themeProvider.darkTheme.cardColor
+        : const Color(0xFFE0E0E0);
+    final primaryTextColor = isDark ? Colors.white : const Color(0xFF0F1D33);
+    final secondaryTextColor = isDark ? Colors.white70 : Colors.grey[700]!;
+    final tertiaryTextColor = isDark ? Colors.white60 : Colors.grey[600]!;
+
     final votos = _estadoValidacion?['votos_comunidad'] ?? 0;
     final requeridos = _estadoValidacion?['requeridos_comunidad'] ?? 0;
     final validado = _estadoValidacion?['validado_por_experto'] ?? false;
@@ -625,7 +656,7 @@ class _AvistamientoCardState extends State<AvistamientoCard> {
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 0),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(0)),
       elevation: 1,
-      color: const Color(0xFFE0E0E0),
+      color: cardBackgroundColor,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -649,15 +680,15 @@ class _AvistamientoCardState extends State<AvistamientoCard> {
                 Expanded(
                   child: Text(
                     '@${widget.data.nombreUsuario}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.w600,
                       fontSize: 14,
-                      color: Colors.black87,
+                      color: primaryTextColor,
                     ),
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.more_vert, color: Colors.black54),
+                  icon: Icon(Icons.more_vert, color: primaryTextColor),
                   onPressed: () {},
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
@@ -692,9 +723,10 @@ class _AvistamientoCardState extends State<AvistamientoCard> {
               children: [
                 Text(
                   widget.data.nombreComun,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
+                    color: primaryTextColor,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -702,20 +734,22 @@ class _AvistamientoCardState extends State<AvistamientoCard> {
                   widget.data.nombreCientifico,
                   style: TextStyle(
                     fontSize: 14,
-                    color: Colors.grey[700],
+                    color: secondaryTextColor,
                     fontStyle: FontStyle.italic,
                   ),
                 ),
                 const SizedBox(height: 12),
-                _buildInfoRow('Tipo', widget.data.tipo),
-                _buildInfoRow('Especie', widget.data.especie),
+                _buildInfoRow('Tipo', widget.data.tipo, primaryTextColor),
+                _buildInfoRow('Especie', widget.data.especie, primaryTextColor),
                 _buildInfoRow(
                   'Estado de conservación',
                   widget.data.estadoExtincion,
+                  primaryTextColor,
                 ),
                 _buildInfoRow(
                   'Estado del especímen',
                   widget.data.estadoEspecimen,
+                  primaryTextColor,
                 ),
                 const SizedBox(height: 12),
 
@@ -977,16 +1011,28 @@ class _AvistamientoCardState extends State<AvistamientoCard> {
                 const SizedBox(height: 16),
 
                 // 🔹 Comentarios
-                const Text(
+                Text(
                   'Comentarios:',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: primaryTextColor,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 if (widget.data.comentarios != null &&
                     widget.data.comentarios.isNotEmpty)
-                  ...widget.data.comentarios.map((c) => _buildComentarioCard(c))
+                  ...widget.data.comentarios.map(
+                    (c) => _buildComentarioCard(
+                      c,
+                      primaryTextColor,
+                      cardBackgroundColor,
+                    ),
+                  )
                 else
-                  const Text('No hay comentarios'),
+                  Text(
+                    'No hay comentarios',
+                    style: TextStyle(color: primaryTextColor),
+                  ),
               ],
             ),
           ),

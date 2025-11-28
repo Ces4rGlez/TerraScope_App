@@ -1,11 +1,13 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import '../models/avistamiento_model.dart';
 import '../models/comentario.dart';
 import '../../services/avistamiento_service.dart';
 import '../../services/session_service.dart';
+import '../../services/theme_service.dart';
 
 class AvistamientoDetailPage extends StatefulWidget {
   final Avistamiento avistamiento;
@@ -92,18 +94,40 @@ class _AvistamientoDetailPageState extends State<AvistamientoDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDark = themeProvider.isDarkMode;
+
+    // Theme-aware colors
+    final backgroundColor = isDark
+        ? themeProvider.darkTheme.scaffoldBackgroundColor
+        : const Color(0xFFE0E0E0);
+    final appBarColor = const Color(0xFF5C6445);
+    final appBarTextColor = const Color(0xFFE0E0E0);
+    final cardBackgroundColor = isDark
+        ? themeProvider.darkTheme.cardColor
+        : Colors.white;
+    final primaryTextColor = isDark ? Colors.white : const Color(0xFF0F1D33);
+    final secondaryTextColor = isDark ? Colors.white70 : Colors.grey[700]!;
+    final tertiaryTextColor = isDark ? Colors.white60 : Colors.grey[600]!;
+    final commentBackgroundColor = isDark
+        ? themeProvider.darkTheme.cardColor
+        : const Color(0xFFF5F5F5);
+    final inputFillColor = isDark
+        ? themeProvider.darkTheme.cardColor
+        : const Color(0xFFF5F5F5);
+
     return Scaffold(
-      backgroundColor: const Color(0xFFE0E0E0),
+      backgroundColor: backgroundColor,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF5C6445),
+        backgroundColor: appBarColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFFE0E0E0)),
+          icon: Icon(Icons.arrow_back, color: appBarTextColor),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Detalles del Avistamiento',
-          style: TextStyle(color: Color(0xFFE0E0E0)),
+          style: TextStyle(color: appBarTextColor),
         ),
       ),
       body: SingleChildScrollView(
@@ -202,9 +226,17 @@ class _AvistamientoDetailPageState extends State<AvistamientoDetailPage> {
   }
 
   Widget _buildSpeciesInfo() {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDark = themeProvider.isDarkMode;
+    final cardBackgroundColor = isDark
+        ? themeProvider.darkTheme.cardColor
+        : Colors.white;
+    final primaryTextColor = isDark ? Colors.white : const Color(0xFF0F1D33);
+    final secondaryTextColor = isDark ? Colors.white70 : Colors.grey[700]!;
+
     return Container(
       padding: const EdgeInsets.all(20),
-      color: Colors.white,
+      color: cardBackgroundColor,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -216,10 +248,10 @@ class _AvistamientoDetailPageState extends State<AvistamientoDetailPage> {
                   children: [
                     Text(
                       widget.avistamiento.nombreComun,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF0F1D33),
+                        color: primaryTextColor,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -228,7 +260,7 @@ class _AvistamientoDetailPageState extends State<AvistamientoDetailPage> {
                       style: TextStyle(
                         fontSize: 16,
                         fontStyle: FontStyle.italic,
-                        color: Colors.grey[700],
+                        color: secondaryTextColor,
                       ),
                     ),
                   ],
@@ -249,41 +281,57 @@ class _AvistamientoDetailPageState extends State<AvistamientoDetailPage> {
             ],
           ),
           const SizedBox(height: 16),
-          _buildInfoRow(Icons.category, 'Especie', widget.avistamiento.especie),
+          _buildInfoRow(
+            Icons.category,
+            'Especie',
+            widget.avistamiento.especie,
+            primaryTextColor,
+            secondaryTextColor,
+          ),
           const SizedBox(height: 8),
           _buildInfoRow(
             Icons.forest,
             'Hábitat',
             widget.avistamiento.habitat.nombreHabitat,
+            primaryTextColor,
+            secondaryTextColor,
           ),
           const SizedBox(height: 8),
           _buildInfoRow(
             Icons.visibility,
             'Estado Espécimen',
             widget.avistamiento.estadoEspecimen,
+            primaryTextColor,
+            secondaryTextColor,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String label, String value) {
+  Widget _buildInfoRow(
+    IconData icon,
+    String label,
+    String value,
+    Color primaryTextColor,
+    Color secondaryTextColor,
+  ) {
     return Row(
       children: [
         Icon(icon, size: 20, color: const Color(0xFF5C6445)),
         const SizedBox(width: 8),
         Text(
           '$label: ',
-          style: const TextStyle(
+          style: TextStyle(
             fontWeight: FontWeight.w600,
             fontSize: 14,
-            color: Color(0xFF0F1D33),
+            color: primaryTextColor,
           ),
         ),
         Expanded(
           child: Text(
             value,
-            style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+            style: TextStyle(fontSize: 14, color: secondaryTextColor),
           ),
         ),
       ],
@@ -291,19 +339,27 @@ class _AvistamientoDetailPageState extends State<AvistamientoDetailPage> {
   }
 
   Widget _buildLocationSection() {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDark = themeProvider.isDarkMode;
+    final cardBackgroundColor = isDark
+        ? themeProvider.darkTheme.cardColor
+        : Colors.white;
+    final primaryTextColor = isDark ? Colors.white : const Color(0xFF0F1D33);
+    final tertiaryTextColor = isDark ? Colors.white60 : Colors.grey[600]!;
+
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 12),
       padding: const EdgeInsets.all(20),
-      color: Colors.white,
+      color: cardBackgroundColor,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'DATOS DE UBICACIÓN',
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF0F1D33),
+              color: primaryTextColor,
               letterSpacing: 1.2,
             ),
           ),
@@ -317,25 +373,27 @@ class _AvistamientoDetailPageState extends State<AvistamientoDetailPage> {
                     const SizedBox(height: 8),
                     Text(
                       'Latitud:',
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      style: TextStyle(fontSize: 12, color: tertiaryTextColor),
                     ),
                     Text(
                       widget.avistamiento.ubicacion.latitud.toStringAsFixed(6),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
+                        color: primaryTextColor,
                       ),
                     ),
                     const SizedBox(height: 12),
                     Text(
                       'Longitud:',
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      style: TextStyle(fontSize: 12, color: tertiaryTextColor),
                     ),
                     Text(
                       widget.avistamiento.ubicacion.longitud.toStringAsFixed(6),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
+                        color: primaryTextColor,
                       ),
                     ),
                   ],
@@ -394,19 +452,26 @@ class _AvistamientoDetailPageState extends State<AvistamientoDetailPage> {
   }
 
   Widget _buildDescriptionSection() {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDark = themeProvider.isDarkMode;
+    final cardBackgroundColor = isDark
+        ? themeProvider.darkTheme.cardColor
+        : Colors.white;
+    final primaryTextColor = isDark ? Colors.white : const Color(0xFF0F1D33);
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(20),
-      color: Colors.white,
+      color: cardBackgroundColor,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'DESCRIPCIÓN DEL AVISTAMIENTO',
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF0F1D33),
+              color: primaryTextColor,
               letterSpacing: 1.2,
             ),
           ),
@@ -465,18 +530,29 @@ class _AvistamientoDetailPageState extends State<AvistamientoDetailPage> {
   }
 
   Widget _buildCommentsSection(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDark = themeProvider.isDarkMode;
+    final cardBackgroundColor = isDark
+        ? themeProvider.darkTheme.cardColor
+        : Colors.white;
+    final primaryTextColor = isDark ? Colors.white : const Color(0xFF0F1D33);
+    final tertiaryTextColor = isDark ? Colors.white60 : Colors.grey[600]!;
+    final commentBackgroundColor = isDark
+        ? themeProvider.darkTheme.cardColor
+        : const Color(0xFFF5F5F5);
+
     return Container(
       padding: const EdgeInsets.all(20),
-      color: Colors.white,
+      color: cardBackgroundColor,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'COMENTARIOS',
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF0F1D33),
+              color: primaryTextColor,
               letterSpacing: 1.2,
             ),
           ),
@@ -488,7 +564,7 @@ class _AvistamientoDetailPageState extends State<AvistamientoDetailPage> {
                 child: Text(
                   'No hay comentarios aún',
                   style: TextStyle(
-                    color: Colors.grey[600],
+                    color: tertiaryTextColor,
                     fontStyle: FontStyle.italic,
                   ),
                 ),
@@ -500,7 +576,7 @@ class _AvistamientoDetailPageState extends State<AvistamientoDetailPage> {
                 margin: const EdgeInsets.only(bottom: 12),
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF5F5F5),
+                  color: commentBackgroundColor,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: Colors.grey[300]!),
                 ),
@@ -527,16 +603,17 @@ class _AvistamientoDetailPageState extends State<AvistamientoDetailPage> {
                             children: [
                               Text(
                                 comentario.nombreUsuario,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 14,
+                                  color: primaryTextColor,
                                 ),
                               ),
                               Text(
                                 _formatDate(comentario.fecha),
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: Colors.grey[600],
+                                  color: tertiaryTextColor,
                                 ),
                               ),
                             ],
@@ -547,7 +624,11 @@ class _AvistamientoDetailPageState extends State<AvistamientoDetailPage> {
                     const SizedBox(height: 12),
                     Text(
                       comentario.comentario,
-                      style: const TextStyle(fontSize: 14, height: 1.4),
+                      style: TextStyle(
+                        fontSize: 14,
+                        height: 1.4,
+                        color: primaryTextColor,
+                      ),
                     ),
                   ],
                 ),
@@ -559,20 +640,31 @@ class _AvistamientoDetailPageState extends State<AvistamientoDetailPage> {
   }
 
   Widget _buildAddCommentSection() {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDark = themeProvider.isDarkMode;
+    final cardBackgroundColor = isDark
+        ? themeProvider.darkTheme.cardColor
+        : Colors.white;
+    final primaryTextColor = isDark ? Colors.white : const Color(0xFF0F1D33);
+    final tertiaryTextColor = isDark ? Colors.white60 : Colors.grey[600]!;
+    final inputFillColor = isDark
+        ? themeProvider.darkTheme.cardColor
+        : const Color(0xFFF5F5F5);
+
     return Container(
       padding: const EdgeInsets.all(20),
-      color: Colors.white,
+      color: cardBackgroundColor,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Text(
+              Text(
                 'AGREGAR COMENTARIO',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF0F1D33),
+                  color: primaryTextColor,
                   letterSpacing: 1.2,
                 ),
               ),
@@ -583,7 +675,7 @@ class _AvistamientoDetailPageState extends State<AvistamientoDetailPage> {
                     'como ${widget.nombreUsuario}',
                     style: TextStyle(
                       fontSize: 12,
-                      color: Colors.grey[600],
+                      color: tertiaryTextColor,
                       fontStyle: FontStyle.italic,
                     ),
                     overflow: TextOverflow.ellipsis,
@@ -598,7 +690,7 @@ class _AvistamientoDetailPageState extends State<AvistamientoDetailPage> {
             decoration: InputDecoration(
               hintText: 'Escribe tu comentario aquí...',
               filled: true,
-              fillColor: const Color(0xFFF5F5F5),
+              fillColor: inputFillColor,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(color: Colors.grey[300]!),

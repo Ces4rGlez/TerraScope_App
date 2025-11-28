@@ -360,7 +360,6 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
                                   nombreComunIA,
                                   style: const TextStyle(
                                     fontSize: 18,
-                                    color: Color(0xFF0F1D33),
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
@@ -418,7 +417,6 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
                                   nombreCientificoIA,
                                   style: const TextStyle(
                                     fontSize: 18,
-                                    color: Color(0xFF0F1D33),
                                     fontWeight: FontWeight.bold,
                                     fontStyle: FontStyle.italic,
                                   ),
@@ -477,7 +475,6 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
                                   descripcionIA,
                                   style: const TextStyle(
                                     fontSize: 14,
-                                    color: Color(0xFF0F1D33),
                                     height: 1.5,
                                   ),
                                 ),
@@ -630,7 +627,6 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
-                              color: Color(0xFF0F1D33),
                             ),
                           ),
                         ),
@@ -900,7 +896,6 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
                                               : 'Requiere revisión',
                                           style: const TextStyle(
                                             fontSize: 16,
-                                            color: Color(0xFF0F1D33),
                                             fontWeight: FontWeight.bold,
                                           ),
                                         ),
@@ -934,7 +929,6 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
                                     style: TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
-                                      color: Color(0xFF0F1D33),
                                     ),
                                   ),
                                 ],
@@ -972,7 +966,6 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
                                             child: Text(
                                               error.toString(),
                                               style: const TextStyle(
-                                                color: Color(0xFF0F1D33),
                                                 fontSize: 14,
                                                 height: 1.5,
                                               ),
@@ -1036,7 +1029,6 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
                                       child: Text(
                                         sugerencia,
                                         style: const TextStyle(
-                                          color: Color(0xFF0F1D33),
                                           fontSize: 14,
                                           height: 1.5,
                                         ),
@@ -1330,9 +1322,9 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFE0E0E0),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF5C6445),
+        backgroundColor: Theme.of(context).primaryColor,
         elevation: 0,
         title: const Text(
           'Nuevo Avistamiento',
@@ -1358,11 +1350,7 @@ class _CreateAvistamientoScreenState extends State<CreateAvistamientoScreen> {
             const SizedBox(height: 24),
             const Text(
               'Captura la imagen del avistamiento',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF0F1D33),
-              ),
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
