@@ -24,9 +24,9 @@ class _LogrosScreenState extends State<LogrosScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: const Color.fromARGB(255, 147, 158, 105),
+        backgroundColor: Theme.of(context).primaryColor,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(

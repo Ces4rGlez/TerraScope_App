@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
@@ -12,6 +13,7 @@ import 'avistamiento_detail_page.dart';
 import '../screens/pagina_inicio.dart';
 import '../export/export_dialog.dart';
 import '../../services/routing_service.dart';
+import '../../services/theme_service.dart';
 
 class MapPage extends StatefulWidget {
   final String? usuarioId;
@@ -169,10 +171,7 @@ class _MapPageState extends State<MapPage> {
           _locationError = true;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Ubicación obtenida correctamente'),
-            
-          ),
+          SnackBar(content: Text('Ubicación obtenida correctamente')),
         );
       }
     }
@@ -490,42 +489,55 @@ class _MapPageState extends State<MapPage> {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDark = themeProvider.isDarkMode;
+
+    // Theme-aware colors
+    final primaryColor = isDark
+        ? themeProvider.darkTheme.primaryColor
+        : const Color(0xFF5C6445);
+    final secondaryColor = isDark
+        ? themeProvider.darkTheme.scaffoldBackgroundColor
+        : const Color(0xFFE0E0E0);
+    final accentColor = isDark
+        ? themeProvider.darkTheme.colorScheme.secondary
+        : const Color(0xFF939E69);
+    final appBarTextColor = isDark ? Colors.white : secondaryColor;
+
     return Scaffold(
-      backgroundColor: const Color(0xFF5C6445),
+      backgroundColor: primaryColor,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF5C6445),
+        backgroundColor: primaryColor,
         elevation: 0,
-        title: const Row(
+        title: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
               'TerraScope',
               style: TextStyle(
-                color: Color(0xFFE0E0E0),
+                color: appBarTextColor,
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            SizedBox(width: 8),
-            Icon(Icons.eco, color: Color(0xFFE0E0E0), size: 28),
+            const SizedBox(width: 8),
+            Icon(Icons.eco, color: appBarTextColor, size: 28),
           ],
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.file_download, color: Color(0xFFE0E0E0)),
+            icon: Icon(Icons.file_download, color: appBarTextColor),
             onPressed: _exportToExcel,
             tooltip: 'Exportar a Excel',
           ),
           IconButton(
-            icon: const Icon(Icons.settings, color: Color(0xFFE0E0E0)),
+            icon: Icon(Icons.settings, color: appBarTextColor),
             onPressed: () {},
           ),
         ],
       ),
       body: _isLoading && _avistamientos.isEmpty
-          ? const Center(
-              child: CircularProgressIndicator(color: Color(0xFFE0E0E0)),
-            )
+          ? Center(child: CircularProgressIndicator(color: secondaryColor))
           : Stack(
               children: [
                 Column(
@@ -582,12 +594,12 @@ class _MapPageState extends State<MapPage> {
             ),
       floatingActionButton: FloatingActionButton(
         onPressed: _centerOnUserLocation,
-        backgroundColor: const Color(0xFF5C6445),
-        child: const Icon(Icons.my_location, color: Color(0xFFE0E0E0)),
+        backgroundColor: primaryColor,
+        child: Icon(Icons.my_location, color: secondaryColor),
       ),
       bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: const Color(0xFFE0E0E0),
-        selectedItemColor: const Color(0xFF5C6445),
+        backgroundColor: secondaryColor,
+        selectedItemColor: primaryColor,
         unselectedItemColor: Colors.grey,
         currentIndex: _currentIndex,
         onTap: (index) {
@@ -613,9 +625,20 @@ class _MapPageState extends State<MapPage> {
   }
 
   Widget _buildSearchAndFilters() {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDark = themeProvider.isDarkMode;
+
+    // Theme-aware colors
+    final primaryColor = isDark
+        ? themeProvider.darkTheme.primaryColor
+        : const Color(0xFF5C6445);
+    final secondaryColor = isDark
+        ? themeProvider.darkTheme.scaffoldBackgroundColor
+        : const Color(0xFFE0E0E0);
+
     return Container(
       padding: const EdgeInsets.all(16),
-      color: const Color(0xFF5C6445),
+      color: primaryColor,
       child: Column(
         children: [
           TextField(
@@ -625,7 +648,7 @@ class _MapPageState extends State<MapPage> {
             },
             decoration: InputDecoration(
               filled: true,
-              fillColor: Colors.white,
+              fillColor: secondaryColor,
               hintText: 'Buscar por nombre, especie...',
               prefixIcon: _isSearching
                   ? const Padding(
@@ -679,7 +702,7 @@ class _MapPageState extends State<MapPage> {
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: secondaryColor,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -699,6 +722,17 @@ class _MapPageState extends State<MapPage> {
   }
 
   Widget _buildFilterChip(String label, String? value) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDark = themeProvider.isDarkMode;
+
+    // Theme-aware colors
+    final secondaryColor = isDark
+        ? themeProvider.darkTheme.scaffoldBackgroundColor
+        : const Color(0xFFE0E0E0);
+    final accentColor = isDark
+        ? themeProvider.darkTheme.colorScheme.secondary
+        : const Color(0xFF939E69);
+
     final isSelected = _filtroEspecie == value;
     return FilterChip(
       label: Text(label),
@@ -706,8 +740,8 @@ class _MapPageState extends State<MapPage> {
       onSelected: (selected) {
         _applyFilter(selected ? value : null);
       },
-      backgroundColor: Colors.white,
-      selectedColor: const Color(0xFF939E69),
+      backgroundColor: secondaryColor,
+      selectedColor: accentColor,
       labelStyle: TextStyle(
         color: isSelected ? Colors.black : Colors.grey[700],
         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
@@ -716,16 +750,24 @@ class _MapPageState extends State<MapPage> {
   }
 
   Widget _buildMap() {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDark = themeProvider.isDarkMode;
+
+    // Theme-aware colors
+    final secondaryColor = isDark
+        ? themeProvider.darkTheme.scaffoldBackgroundColor
+        : const Color(0xFFE0E0E0);
+
     if (_currentPosition == null && !_locationError) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            CircularProgressIndicator(color: Color(0xFFE0E0E0)),
-            SizedBox(height: 16),
+            CircularProgressIndicator(color: secondaryColor),
+            const SizedBox(height: 16),
             Text(
               'Obteniendo ubicación...',
-              style: TextStyle(color: Color(0xFFE0E0E0)),
+              style: TextStyle(color: secondaryColor),
             ),
           ],
         ),

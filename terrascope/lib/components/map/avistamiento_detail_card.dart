@@ -1,7 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:geolocator/geolocator.dart';
 import '../models/avistamiento_model.dart';
+import '../../services/theme_service.dart';
 
 class AvistamientoDetailCard extends StatefulWidget {
   final Avistamiento avistamiento;
@@ -92,9 +94,23 @@ class _AvistamientoDetailCardState extends State<AvistamientoDetailCard> {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDark = themeProvider.isDarkMode;
+
+    // Theme-aware colors
+    final cardBackgroundColor = isDark
+        ? themeProvider.darkTheme.scaffoldBackgroundColor
+        : const Color(0xFFF9F9F9);
+    final textColor = isDark ? Colors.white : const Color(0xFF1A2B48);
+    final secondaryTextColor = isDark ? Colors.white70 : Colors.grey[700];
+    final descriptionTextColor = isDark
+        ? Colors.white70
+        : const Color(0xFF2E2E2E);
+    final closeIconColor = isDark ? Colors.white70 : Colors.black54;
+
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF9F9F9),
+        color: cardBackgroundColor,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         boxShadow: [
           BoxShadow(
@@ -138,10 +154,10 @@ class _AvistamientoDetailCardState extends State<AvistamientoDetailCard> {
                         children: [
                           Text(
                             widget.avistamiento.nombreComun,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
-                              color: Color(0xFF1A2B48),
+                              color: textColor,
                             ),
                           ),
                           const SizedBox(height: 4),
@@ -150,7 +166,7 @@ class _AvistamientoDetailCardState extends State<AvistamientoDetailCard> {
                             style: TextStyle(
                               fontSize: 13,
                               fontStyle: FontStyle.italic,
-                              color: Colors.grey[700],
+                              color: secondaryTextColor,
                             ),
                           ),
                           const SizedBox(height: 8),
@@ -190,7 +206,7 @@ class _AvistamientoDetailCardState extends State<AvistamientoDetailCard> {
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.close, color: Colors.black54),
+                      icon: Icon(Icons.close, color: closeIconColor),
                       onPressed: widget.onClose,
                     ),
                   ],
@@ -199,18 +215,18 @@ class _AvistamientoDetailCardState extends State<AvistamientoDetailCard> {
                 const SizedBox(height: 8),
                 Text(
                   'Registrado por: ${widget.avistamiento.nombreUsuario}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
-                    color: Colors.black87,
+                    color: secondaryTextColor,
                     fontStyle: FontStyle.italic,
                   ),
                 ),
                 const SizedBox(height: 10),
                 Text(
                   widget.avistamiento.descripcion,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
-                    color: Color(0xFF2E2E2E),
+                    color: descriptionTextColor,
                     height: 1.3,
                   ),
                   maxLines: 3,
@@ -229,7 +245,7 @@ class _AvistamientoDetailCardState extends State<AvistamientoDetailCard> {
                     const SizedBox(width: 4),
                     Text(
                       widget.avistamiento.habitat.nombreHabitat,
-                      style: const TextStyle(fontSize: 12),
+                      style: TextStyle(fontSize: 12, color: secondaryTextColor),
                     ),
                     if (_distanceInKm != null) ...[
                       const SizedBox(width: 12),

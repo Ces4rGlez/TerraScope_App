@@ -133,11 +133,7 @@ class _ExportDialogState extends State<ExportDialog> {
                 const SizedBox(width: 12),
                 const Text(
                   'Exportar Datos',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF0F1D33),
-                  ),
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
                 const Spacer(),
                 IconButton(
@@ -308,11 +304,7 @@ class _ExportDialogState extends State<ExportDialog> {
               const SizedBox(width: 8),
               const Text(
                 'Vista Previa',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF0F1D33),
-                ),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
             ],
           ),
@@ -337,7 +329,6 @@ class _ExportDialogState extends State<ExportDialog> {
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF0F1D33),
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -392,7 +383,6 @@ class _ExportDialogState extends State<ExportDialog> {
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF0F1D33),
                     ),
                   ),
                   Text(

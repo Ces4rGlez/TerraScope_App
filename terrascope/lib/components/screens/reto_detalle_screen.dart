@@ -5,6 +5,7 @@ import '../models/reto_model.dart';
 import '../../providers/retos_observer_provider.dart';
 import '../../services/session_service.dart';
 import '../../services/retos_service.dart';
+import '../../services/theme_service.dart';
 
 class RetoDetalleScreen extends StatefulWidget {
   final Reto reto;
@@ -158,9 +159,9 @@ class _RetoDetalleScreenState extends State<RetoDetalleScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _grisClaro,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: _oliva,
+        backgroundColor: Theme.of(context).primaryColor,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(
@@ -333,7 +334,6 @@ class _RetoDetalleScreenState extends State<RetoDetalleScreen>
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
-                  color: _azulOscuro,
                   letterSpacing: 0.5,
                 ),
               ),
@@ -386,11 +386,7 @@ class _RetoDetalleScreenState extends State<RetoDetalleScreen>
                 ),
                 Text(
                   value,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: _azulOscuro,
-                  ),
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
                 ),
               ],
             ),
@@ -434,7 +430,6 @@ class _RetoDetalleScreenState extends State<RetoDetalleScreen>
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
-                  color: _azulOscuro,
                   letterSpacing: 0.5,
                 ),
               ),
@@ -487,7 +482,6 @@ class _RetoDetalleScreenState extends State<RetoDetalleScreen>
                             style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
-                              color: _azulOscuro,
                             ),
                           ),
                         ],
@@ -566,7 +560,6 @@ class _RetoDetalleScreenState extends State<RetoDetalleScreen>
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
-                  color: _azulOscuro,
                   letterSpacing: 0.5,
                 ),
               ),
@@ -610,7 +603,6 @@ class _RetoDetalleScreenState extends State<RetoDetalleScreen>
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
-                            color: _azulOscuro,
                           ),
                         ),
                         const SizedBox(height: 2),
@@ -706,7 +698,6 @@ class _RetoDetalleScreenState extends State<RetoDetalleScreen>
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
-                  color: _azulOscuro,
                   letterSpacing: 0.5,
                 ),
               ),
@@ -783,11 +774,7 @@ class _RetoDetalleScreenState extends State<RetoDetalleScreen>
           constraints: const BoxConstraints(maxWidth: 80),
           child: Text(
             usuario['nombre_usuario'] ?? 'Usuario',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              color: _azulOscuro,
-            ),
+            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
             textAlign: TextAlign.center,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,

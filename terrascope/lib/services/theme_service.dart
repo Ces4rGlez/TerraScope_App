@@ -20,12 +20,12 @@ class ThemeProvider extends ChangeNotifier {
     useMaterial3: true,
     brightness: Brightness.light,
     colorScheme: ColorScheme.fromSeed(
-      seedColor: Colors.green,
+      seedColor: const Color(0xFF939E69),
       brightness: Brightness.light,
     ),
     scaffoldBackgroundColor: Colors.white,
     appBarTheme: const AppBarTheme(
-      backgroundColor: Colors.green,
+      backgroundColor: Color(0xFF939E69),
       foregroundColor: Colors.white,
     ),
   );
